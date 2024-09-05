@@ -1,0 +1,26 @@
+{
+    "id": "DAF9CC68",
+    "path": "G:/LandUse/shiweda-m/Downscaling for ecomodelling/Downscale_SAfrica/scripts/install_packages.R",
+    "project_path": "scripts/install_packages.R",
+    "type": "r_source",
+    "hash": "3245111336",
+    "contents": "",
+    "dirty": false,
+    "created": 1725538306741.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "11,30",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1725538536,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1725538555024,
+    "read_only": false,
+    "read_only_alternatives": []
+}
