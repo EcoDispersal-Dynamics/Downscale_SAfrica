@@ -1,12 +1,32 @@
-
-# Author: Markus Shiweda, 
+# Author: Markus Shiweda
 # Co-Authors: Tamsin Woodman, Reinhard Prestele
 
-# install.packages('devtools')
-# install.packages('FNN')
-# install.packages('terra') # Press no when RStudio asks if package sould be compiled from source, then the 1.5-21 version of terra should be installed automatically.
-# 
-# library(devtools)
-install_github("TamsinWoodman/LandScaleR", build_vignettes = TRUE)
+# Function to install and load packages
+install_if_needed <- function(pkg) {
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg)
+    library(pkg, character.only = TRUE)
+  }
+}
 
-install.packages('data.table')
+# Install and load CRAN packages
+install_if_needed('devtools')
+install_if_needed('FNN')
+install_if_needed('terra') # Press no when RStudio asks if package should be compiled from source
+install_if_needed('data.table')
+install_if_needed('raster')
+install_if_needed('rasterVis')
+
+# Install and load LandScaleR from GitHub
+if (!requireNamespace("LandScaleR", quietly = TRUE)) {
+  devtools::install_github("TamsinWoodman/LandScaleR", build_vignettes = TRUE)
+} else {
+  message("LandScaleR is already installed.")
+}
+
+# Now load the package
+if (requireNamespace("LandScaleR", quietly = TRUE)) {
+  library(LandScaleR)
+} else {
+  stop("Failed to install or load the LandScaleR package.")
+}
