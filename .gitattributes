@@ -1,3 +1,4 @@
 *.Rproj filter=lfs diff=lfs merge=lfs -text
 *.Rdata filter=lfs diff=lfs merge=lfs -text
 *.Rhistory filter=lfs diff=lfs merge=lfs -text
+Southern[[:space:]]sub-Saharan[[:space:]]Africa.tiff filter=lfs diff=lfs merge=lfs -text
