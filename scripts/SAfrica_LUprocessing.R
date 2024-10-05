@@ -62,8 +62,13 @@ for (country in unique(SAfrica_states_proj_final_shp$CNTRY_NAME)) {
 
 # ee_clean_user_credentials()
 # ee_Authenticate()  # Authenticate with Google Earth Engine. An rgee function
-ee_Authenticate()
-ee_Initialize()   # Initialize Google Earth Engine. An rgee function
+# rgee::ee_clean_user_credentials()
+rgee::ee_clean_user_credentials()
+reticulate::use_python("C:/Users/shiweda-m/AppData/Local/Programs/Python/Python312/python.exe", required = TRUE)
+rgee::ee_Authenticate()
+
+rgee::ee_Initialize(email = "shiwedamark@gmail.com", drive = FALSE)
+
 
 
 # Load MODIS MCD12Q1 dataset for 2021
