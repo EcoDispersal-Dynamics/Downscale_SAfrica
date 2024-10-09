@@ -2,3 +2,4 @@
 *.Rdata filter=lfs diff=lfs merge=lfs -text
 *.Rhistory filter=lfs diff=lfs merge=lfs -text
 Southern[[:space:]]sub-Saharan[[:space:]]Africa.tiff filter=lfs diff=lfs merge=lfs -text
+LU_ref_dataset/LU_ref_ESA_100m/ESA_LC_2021_Zimbabwe_ID_100m.tif filter=lfs diff=lfs merge=lfs -text
