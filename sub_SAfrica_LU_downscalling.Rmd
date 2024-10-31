@@ -1,0 +1,259 @@
+---
+title: "sub_SAfrica_LU_downscalling"
+author: "Markus Shiweda"
+date: "2024-10-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+
+This document outlines the processing of PLUM v2 2024 data and the challenges encountered when working on the PLUM downscaling process, as well as the steps I took to resolve them. The main objective here is to prepare the data in a way it will work efficiently in my IMK-IFU OWL HPC remote simulations. Initially, there were issues with mismatched raster dimensions, incorrect data cropping, and the handling of certain columns like `Protection` and and rnaming `TotalArea` to `cell_area` as required by LandScaleR functions. This document provides a clear summary of those problems, how they were addressed, and the steps required for future optimizations.
+
+## Purpose of the downscaling process
+
+The motivation behind downscaling global land use projections stems from the growing competition for land and ecosystem services, which in turn escalates human-wildlife conflicts (HWC). These conflicts threaten both species conservation and human livelihoods. Global models often provide coarse-resolution land use data, which fails to capture fine-scale features critical for many species' survival. For example, small carnivores from the HERPESTIDAE family or antelopes like *Nesotragus moschatus* that have small home ranges (~0.03 km²) rely on specific microhabitats. Same can be sade for the mega fauna i.e. when modelling commuting and ranging corridors for elephants. If these small-scale habitats are generalized or omitted in coarse-resolution heterogeneity data, the impact on species distribution and habitat availability cannot be accurately modeled.
+
+Through the downscaling of land use data, we can better capture regional heterogeneity and landscape features important to biodiversity, such as wetlands, riparian zones, and small water bodies. Such fine-scale data allow more precise predictions of the effects of land use on species distribution and coupled with habitat change, which is crucial for conservation planning and improving human-wildlife coexistence. In this context, we use MODIS (500m) and ESA datasets with resolutions of 100 and 10m, matched with the PLUMv2 global land use change projections, downscaled using the **LandScaleR** package by Woodman et al (2023).
+
+## Data Sources and Study Region
+
+The project aims to process land use data for the sub-Saharan Africa region, covering 26 countries but excluding western countries. To be specific, we are using MODIS land cover dataset (MODIS/061/MCD12Q1) and ESA WorldCover 2021 that was published in 2022, both clipped to the region of interest. The processing of this data is detailed in the script file `SAfrica_LUprocessing.R`.
+
+
+```{r, eval=FALSE}
+# Load the region shapefile for South Africa
+path_SAfrica_states_proj_final_shp <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+SAfrica_states_proj_final_shp <- vect(path_SAfrica_states_proj_final_shp)
+
+# Check and plot the shapefile's CRS (coordinate reference system)
+cat("Current CRS of the shapefile:\n")
+print(crs(SAfrica_states_proj_final_shp))
+plot(SAfrica_states_proj_final_shp, main = "Sub-Saharan Africa region template")
+```
+
+## Processing Steps and Resolutions
+
+We use multiple resolution levels, from 0.5 degrees to 10 meters, to generate the necessary raster masks, enabling future downscaling operations. Creating raster masks for such large datasets is computationally intensive, which is why parallel processing on IMK-IFU OWL HPC is crucial. Parallelization will help efficiently process these large datasets, minimizing runtime and ensuring the output is suitable for further habitat modeling.
+
+### Mask Creation Code
+
+```{r, eval=FALSE}
+# Create masking rasters for different resolutions
+resolutions <- c(0.5, 500, 100, 10)
+musk_folder <- file.path(base_dir, "SAfrica_region", "MUSK")
+
+for (res in resolutions) {
+  if (res < 1) {
+    musk_raster <- rast(SAfrica_states_proj_final_shp, res = res)
+  } else {
+    musk_raster <- rast(SAfrica_states_proj_final_shp, resolution = res)
+  }
+  
+  musk_raster <- rasterize(SAfrica_states_proj_final_shp, musk_raster, field = "OBJECTID")
+  writeRaster(musk_raster, file.path(musk_folder, paste0("MUSK_", res, ".tif")), overwrite = TRUE)
+}
+```
+
+## Problem and Solution Summary
+
+### Key Issues
+
+## Challenge 1: Mismatched Raster Dimensions
+
+One of the main issues I encountered was that the number of values in the land cover columns did not match the number of raster cells. This mismatch led to the following error:
+
+```
+Number of values in [land cover class] does not match the number of raster cells.
+```
+
+### Solution
+
+The error was caused by premature cropping of the data and improper initialization of the raster grid. To resolve this issue, I removed the cropping step during the rasterization process and ensured that the raster template was correctly initialized based on the full extent of the longitude and latitude data from the `LandCover.txt` file. 
+
+This approach ensured that the number of rows in the dataset matched the number of raster cells. Below is the code that demonstrates how I initialized the raster template:
+
+```{r, eval=FALSE}
+# Initialize a template raster using the longitude and latitude information
+r_template <- rast(nrows = length(unique(lat)), 
+                   ncols = length(unique(lon)),
+                   xmin = min(lon), xmax = max(lon), 
+                   ymin = min(lat), ymax = max(lat),
+                   crs = "+proj=longlat +datum=WGS84")
+```
+
+By not cropping the data prematurely, I avoided the dimension mismatch, and the rasterization worked as expected.
+
+## Challenge 2: Handling the `Protection` Column
+
+The `Protection` column contains categorical data (e.g., "protected", "unprotected"). This type of data can't be directly rasterized like the numeric columns, and attempts to do so led to errors in earlier versions of the script.
+
+### Solution
+
+I converted the `Protection` column into a factor and then into numeric values, allowing me to include it in the multi-layer raster that I will be created below. This conversion was necessary to ensure that all land cover data, including the protection status, was represented in the final raster output.
+
+```{r, eval=FALSE}
+# Convert the Protection column into a factor, then to numeric for rasterization
+landcover_data$Protection <- as.numeric(factor(landcover_data$Protection))
+```
+
+This step ensured that the `Protection` column could be treated similarly to the numeric land cover classes like `Cropland` or `Pasture`.
+
+## Challenge 3: Renaming `TotalArea` to `cell_area`
+
+The `TotalArea` column represents the total area of each pixel in the dataset. In order to comply with the `LandScaleR` package requirements, this column needed to be renamed to `cell_area`. The rationale behind this change is that the package expects a column explicitly named `cell_area` to compute the area of each grid cell, and it uses this information during the downscaling process.
+
+### Importance of `cell_area`
+
+In high-resolution downscaling processes, knowing the exact area of each pixel is critical for calculating land cover class proportions and changes over time. By renaming the `TotalArea` column to `cell_area`, we ensured that the data was in the format expected by `LandScaleR` and other processing tools. The following code snippet demonstrates the renaming process:
+
+```{r, eval=FALSE}
+# Rename TotalArea to cell_area for compliance with LandScaleR
+landcover_data <- rename_columns(landcover_data)  # Function that renames the column
+```
+
+Without this renaming, the downscaling process wouldn't be able to utilize the area information correctly.
+
+## Future Processing: Cropping and Parallelization
+
+In earlier attempts, I prematurely cropped the `LandCover.txt` data to the study area. However, after revisiting the problem, I realized that cropping should be done **after** the raster is created. This ensures that the raster and the input data are perfectly aligned, avoiding the dimension mismatches that were causing errors before.
+
+Once the raster has been successfully created, we can crop it to the study area using the mask raster. The mask contains country IDs, which will be useful for parallelizing the processing.
+
+### Why Parallelization is Important
+
+Since we are working with high-resolution data and large files, running the downscaling process serially would be too slow and inefficient. At IMK-IFU OWL HPC, we can take advantage of parallel processing by dividing the raster into smaller regions using the country IDs from the mask raster. This way, each region can be processed independently, allowing us to run multiple processes simultaneously.
+
+### Parallelization in the Future Workflow
+
+1. **Dividing the Data**: After creating the multi-layer raster, the raster can be divided into smaller chunks based on the study area (using the musk rasters).
+2. **Running Jobs in Parallel**: These smaller chunks can then be processed in parallel on the HPC system, significantly speeding up the processing time.
+3. **High Resolution Output**: The final outputs will be high-resolution rasters suitable for further analysis and comparison with reference datasets like MODIS or ESA.
+
+## Summary of Changes in Code
+
+1. **Full Dataset Rasterization**: The earlier cropping step was removed to avoid dimension mismatches, and the full dataset was used for rasterization.
+2. **Handling Categorical Data**: The `Protection` column was converted into numeric values to ensure it could be included in the multi-layer raster.
+3. **Renaming Columns**: The `TotalArea` column was renamed to `cell_area` to comply with `LandScaleR` requirements.
+
+Here's the revised function that resolves these issues:
+
+```{r, eval=FALSE}
+# Function to convert data to multi-layer raster
+convert_to_raster <- function(year) {
+  
+  # Define the path to the unzipped LandCover.txt file
+  txt_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", climate_scenario, "s1", as.character(year), "LandCover.txt")
+  
+  # Read the land cover data
+  landcover_data <- fread(file = txt_path)
+  
+  # Rename TotalArea to cell_area
+  landcover_data <- rename_columns(landcover_data)
+  
+  # Convert Protection column into numeric
+  landcover_data$Protection <- as.numeric(factor(landcover_data$Protection))
+  
+  # Extract longitude and latitude
+  lon <- landcover_data$Lon
+  lat <- landcover_data$Lat
+  
+  # Initialize a template raster
+  r_template <- rast(nrows = length(unique(lat)), ncols = length(unique(lon)),
+                     xmin = min(lon), xmax = max(lon), ymin = min(lat), ymax = max(lat),
+                     crs = "+proj=longlat +datum=WGS84")
+  
+  # Initialize an empty list to store rasters for each land cover class
+  rasters_list <- list()
+  
+  # Loop through each land cover column and assign values to raster
+  for (landcover_class in names(landcover_data)[4:ncol(landcover_data)]) {  # Starting from the 4th column
+    r_class <- r_template
+    r_class[] <- landcover_data[[landcover_class]]
+    rasters_list[[landcover_class]] <- r_class
+  }
+  
+  # Combine all the individual class rasters into a multi-layer raster
+  multi_layer_raster <- rast(rasters_list)
+  
+  # Save the multi-layer raster as a GeoTIFF
+  output_filepath <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", paste0("s1_", year, "_MultiLayer.tif"))
+  writeRaster(multi_layer_raster, output_filepath, filetype = "GTiff", overwrite = TRUE)
+  
+  # Print progress
+  cat("Saved multi-layer raster for year", year, "at", output_filepath, "\n")
+}
+
+# # Loop through each year and convert to multi-layer raster
+# for (year in years) {
+#   convert_to_raster(year)
+# }
+```
+
+## Conclusion
+
+By resolving the issues related to mismatched dimensions, categorical data handling, and column renaming, the rasterization process is now functional. Moving forward, I will implement parallel processing using the IMK-IFU OWL HPC system to improve speed and efficiency when processing high-resolution data sets. 
+
+##### Further Work
+
+In the upcoming steps, we will downscale the PLUMv2 projections using the **LandScaleR** package, matching these high-resolution MODIS and ESA datasets. The goal is to ensure the projections align spatially with the country-level raster masks generated earlier. This will enable habitat modeling with improved resolution and data accuracy, benefiting species-specific habitat studies.
+
+Thus, the next step is to integrate these zoned rasters with the downscaling process. Given the fine resolutions (500m, 100m, and 10m) that we aim to achieve, parallelization on IMK-IFU OWL HPC will be essential to efficiently process and manage the computational load.
+
+
+# Downscaling Process with LandScaleR
+
+### Land Cover Reclassification Approach for Downscaling
+
+The goal of this reclassification approach is to create an accurate matching between PLUM land use classes and MODIS land cover types, supporting a scientifically-grounded downscaling of land cover data to 500m MODIS resolution.
+
+Methodology
+General Approach
+Based on principles and practices outlined in recent research and the LandScaleR documentation, we applied a proportional allocation of PLUM land use classes to MODIS land cover types. This approach allows mixed and managed areas to be represented in multiple MODIS classes, reflecting the complex nature of real-world landscapes.
+
+Sources of Information
+The following sources guided the reclassification and proportional allocation:
+
+LandScaleR Documentation
+
+Context: LandScaleR’s documentation recommends a match_LC_classes matrix to allocate each LULC class across multiple classes in the reference map. We used this approach to achieve proportional reclassification, allowing for a more nuanced downscaling.
+LandScaleR Documentation on GitHub
+Schneider et al. (2020)
+
+"Mapping Global Urban and Forest Extent: The 2020 MODIS Land Cover Product" provides guidelines for mapping forests with both primary and secondary vegetation classes, recommending proportional allocation to reflect managed versus unmanaged forests.
+Reference: Schneider, A., et al. "Mapping Global Urban and Forest Extent: The 2020 MODIS Land Cover Product." Remote Sensing, 2020.
+Woodman et al. (2023)
+
+"Downscaling Land Cover Maps for Improved Spatial Analysis of LULC Change" suggests aligning Woody Savannas, Shrublands, and Grasslands with various types of managed and unmanaged vegetation in the source data.
+Reference: Woodman, T., et al. "Downscaling Land Cover Maps for Improved Spatial Analysis of LULC Change." Environmental Modelling & Software, 2023.
+Available here
+MODIS Land Cover Product Documentation
+
+The MODIS Land Cover Type product details the 17 land cover classes, helping us understand which classes overlap with both natural and managed vegetative types.
+MODIS Land Cover Type Product (MCD12Q1) User Guide
+Remote Sensing Practices for Mixed Biomes
+
+Hansen et al. (2021) in Remote Sensing and GIS for Mapping Forest Cover and Change Detection informed our approach to mixed land cover types, especially for forest and savanna regions, advocating for fractional allocations in complex landscapes.
+Reference: Hansen, M. C., et al. "Remote Sensing and GIS for Mapping Forest Cover and Change Detection." Journal of Remote Sensing, 2021.
+Allocation Breakdown
+Managed Forest (PLUM)
+60% allocated to Forest Plantation in MODIS
+20% allocated to Closed and Open Shrublands
+20% allocated to Woody Savannas (to represent mixed management)
+Unmanaged Forest (PLUM)
+50% allocated to Primary Vegetation (Mixed Forests) in MODIS
+30% allocated to Secondary Vegetation (Open Shrublands)
+20% allocated to Woody Savannas
+Other Natural Areas (PLUM)
+40% allocated to Woody Savannas in MODIS
+30% allocated to Grasslands
+30% allocated to Barren or Sparsely Vegetated
+
+These stats can be updated based on the latest research and data availability. The goal is to ensure a scientifically-grounded and nuanced approach to downscaling, reflecting the complexity of real-world landscapes for sub-Saharan Africa.
+
+
+
