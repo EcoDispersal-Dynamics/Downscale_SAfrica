@@ -14,8 +14,6 @@ install_if_needed('devtools')
 install_if_needed('FNN')
 install_if_needed('terra') # Press no when RStudio asks if package should be compiled from source
 install_if_needed('data.table')
-install_if_needed('raster')
-install_if_needed('rasterVis')
 install_if_needed('rgee')
 # Install and load LandScaleR from GitHub
 if (!requireNamespace("LandScaleR", quietly = TRUE)) {
