@@ -49,40 +49,74 @@ if ("CNTRY_NAME" %in% names(attribute_table)) {
   cat("CountryName column not found.\n")
 }
 
-# Filter the shapefile for a specific country (e.g., Angola)
+# Filter the shapefile for a specific country (e.g., Angola) to test
 country_name <- "Angola"
 country_shapefile <- SAfrica_states_proj_final_shp[SAfrica_states_proj_final_shp$CNTRY_NAME == country_name, ]
 
 # Plot the specific country's polygon
 plot(country_shapefile, main = paste("Region for:", country_name))
 
-# Loop through each country by name
-# 'unique()' extracts all the unique country names from the 'CNTRY_NAME' column, which is the attribute field for country names
-for (country in unique(SAfrica_states_proj_final_shp$CNTRY_NAME)) {
-  
-  # Filter shapefile by country
-  # This creates a subset of the shapefile, selecting only the polygon(s) that correspond to the current 'country' in the loop
-  country_shp <- SAfrica_states_proj_final_shp[SAfrica_states_proj_final_shp$CNTRY_NAME == country, ]
-  
-  # Save or process the country's data here
-  # 'plot()' visualizes the shapefile of the current country on the map
-  # 'main' sets the title of the plot, dynamically changing with the country name in the loop
-  plot(country_shp, main = paste("Country:", country))
-  
-  # Adding Google Earth Engine code to download raster data for each country’s polygon region
+# # Loop through each country by name
+# # 'unique()' extracts all the unique country names from the 'CNTRY_NAME' column, which is the attribute field for country names
+# for (country in unique(SAfrica_states_proj_final_shp$CNTRY_NAME)) {
+#   
+#   # Filter shapefile by country
+#   # This creates a subset of the shapefile, selecting only the polygon(s) that correspond to the current 'country' in the loop
+#   country_shp <- SAfrica_states_proj_final_shp[SAfrica_states_proj_final_shp$CNTRY_NAME == country, ]
+#   
+#   # Save or process the country's data here
+#   # 'plot()' visualizes the shapefile of the current country on the map
+#   # 'main' sets the title of the plot, dynamically changing with the country name in the loop
+#   plot(country_shp, main = paste("Country:", country))
+# }
+
+# Create musking rasters for the sub-Saharan region
+#
+# Set the resolution levels (0.5 degrees, 500m, 100m, 10m)
+resolutions <- c(0.5, 500, 100, 10)  # degrees and meters
+
+# Create a folder to save MUSK rasters if it doesn't exist
+musk_folder <- file.path(base_dir,"SAfrica_region", "MUSK")
+if (!dir.exists(musk_folder)) {
+  dir.create(musk_folder)
 }
 
+# Create the raster masks at each resolution level
+for (res in resolutions) {
+  
+  # For resolutions less than 1, treat as degrees; otherwise as meters
+  if (res < 1) {
+    # Raster at 0.5 degrees resolution
+    musk_raster <- rast(SAfrica_states_proj_final_shp, res = res)
+  } else {
+    # Raster at meter-level resolution (e.g., 500m, 100m, 10m)
+    musk_raster <- rast(SAfrica_states_proj_final_shp, resolution = res)
+  }
+  
+  # Assign the OBJECTID to the raster cells
+  musk_raster <- rasterize(SAfrica_states_proj_final_shp, musk_raster, field = "OBJECTID")
+  
+  # Save the raster
+  musk_raster_file <- file.path(musk_folder, paste0("MUSK_", res, ifelse(res < 1, "deg", "m"), ".tif"))
+  writeRaster(musk_raster, musk_raster_file, overwrite = TRUE)
+  
+  # Print progress
+  cat("Created and saved MUSK raster at", res, ifelse(res < 1, "degrees", "meters"), "resolution.\n")
+}
+
+# Plot one of the created rasters for visual inspection (e.g., the 500m one)
+plot(musk_raster, main = "MUSK Raster at Selected Resolution")
 #-------------------------------------------------------------------------------
 
-# ee_clean_user_credentials()
-# ee_Authenticate()  # Authenticate with Google Earth Engine. An rgee function
+# # ee_clean_user_credentials()
+# # ee_Authenticate()  # Authenticate with Google Earth Engine. An rgee function
+# # rgee::ee_clean_user_credentials()
 # rgee::ee_clean_user_credentials()
-rgee::ee_clean_user_credentials()
-reticulate::use_python("C:/Users/shiweda-m/AppData/Local/Programs/Python/Python312/python.exe", 
-                       required = TRUE)
-rgee::ee_Authenticate()
-
-rgee::ee_Initialize(email = "shiwedamark@gmail.com", drive = FALSE)
+# reticulate::use_python("C:/Users/shiweda-m/AppData/Local/Programs/Python/Python312/python.exe", 
+#                        required = TRUE)
+# rgee::ee_Authenticate()
+# 
+# rgee::ee_Initialize(email = "shiwedamark@gmail.com", drive = FALSE)
 
 #-------------------------------------------------------------------------------
 
@@ -179,6 +213,7 @@ Map.addLayer(countryGeometries, {}, 'Country Geometries');
 
 
 #-------------------------------------------------------------------------------
+
 
 
 
