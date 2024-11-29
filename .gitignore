@@ -2,5 +2,5 @@
 LU_downscalled_dataset/
 # Exclude LU_ref_dataset/LU_ref -PLUM_SSPs folder and its contents
 LU_ref_dataset/LU_ref -PLUM_SSPs/
-.Rproj.user
+.Rproj.user/
 sub_SAfrica_LU_downscalling.html
