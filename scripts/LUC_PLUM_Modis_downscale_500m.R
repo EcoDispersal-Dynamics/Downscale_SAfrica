@@ -9,7 +9,7 @@ base_dir <- getwd()
 
 # Paths for MODIS and PLUM data
 modis_reference_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "MODIS_LandCover_2021_SouthernAfrica.tif")
-masked_scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", "masked_SSP1_RCP26")
+masked_scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref-PLUM_SSPs", "masked_SSP1_RCP26")
 downscale_base_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", "downscale_SSP1_RCP26")
 
 # Ensure the output directory exists
