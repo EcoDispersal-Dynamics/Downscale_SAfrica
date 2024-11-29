@@ -118,14 +118,3 @@ cat("All files renamed successfully.")
 
 
 
-# Inspect other LandScaleR vignettes rasters
-# Load the raster
-
-HiLDA_raster_path <- file.path(base_dir, "LU_ref_dataset", "HiLDA_raster", "UK_DS_example_Discrete_Time1.tif")
-HiLDA_raster <- rast(HiLDA_raster_path)
-HiLDA_raster
-plot(HiLDA_raster)
-levels(HiLDA_raster)
-summary(HiLDA_raster)
-unique_HiLDA_raster_classes <- unique(values(HiLDA_raster))
-unique_HiLDA_raster_classes
