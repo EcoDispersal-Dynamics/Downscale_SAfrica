@@ -2,7 +2,8 @@
 title: "sub_SAfrica_LU_downscalling"
 author: "Markus Shiweda"
 date: "2024-10-22"
-output: html_document
+output: word_document
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
@@ -252,6 +253,64 @@ Other Natural Areas (PLUM)
 40% allocated to Woody Savannas in MODIS
 30% allocated to Grasslands
 30% allocated to Barren or Sparsely Vegetated
+
+```{r}
+# Create the matching matrix as a data frame
+library(DT)
+match_LC_classes_1 <- data.frame(
+  row.names = c(
+    "cell_area", "Cropland", "Pasture", "TimberForest", "CarbonForest", 
+    "UnmanagedForest", "OtherNatural", "Photovoltaics", "Agrivoltaics", 
+    "Barren", "Urban", "Protection"
+  ),
+  `Evergreen Needleleaf Forests` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Evergreen Broadleaf Forests` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Deciduous Needleleaf Forests` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Deciduous Broadleaf Forests` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Mixed Forests` = c(0, 0, 0, 0.6, 0.5, 0, 0, 0, 0, 0, 0, 0),
+  `Closed Shrublands` = c(0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Open Shrublands` = c(0.0, 0.0, 0.0, 0.0, 0.3, 0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Woody Savannas` = c(0.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Savannas` = c(0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Grasslands` = c(0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Permanent Wetlands` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0),
+  `Croplands` = c(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Urban and Built-Up` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+  `Cropland/Natural Vegetation Mosaics` = c(0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Snow and Ice` = c(0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+  `Barren or Sparsely Vegetated` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0, 0),
+  `Water Bodies` = c(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+)
+
+
+# datatable(match_LC_classes_1, options = list(pageLength = 5, scrollX = TRUE))
+
+```
+
+
+
+```{r create_table, echo=FALSE, results='asis'}
+library(DT)
+library(htmltools)
+library(htmlwidgets)
+
+# Create the interactive table
+datatable_widget <- datatable(
+  match_LC_classes_1, 
+  options = list(
+    pageLength = 5,     # Number of rows to display per page
+    scrollX = TRUE      # Enable horizontal scrolling
+  )
+)
+
+# Save the interactive table to an HTML file
+output_file <- "interactive_table.html"
+saveWidget(datatable_widget, output_file, selfcontained = TRUE)
+
+# Create a hyperlink to the saved HTML file
+cat("Here is the interactive table: [Interactive Table](", output_file, ")", sep = "")
+
+```
 
 These stats can be updated based on the latest research and data availability. The goal is to ensure a scientifically-grounded and nuanced approach to downscaling, reflecting the complexity of real-world landscapes for sub-Saharan Africa.
 
