@@ -10,18 +10,20 @@ base_dir <- getwd()
 # Paths for MODIS and PLUM data
 modis_reference_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "MODIS_LandCover_2021_SouthernAfrica.tif")
 masked_scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref-PLUM_SSPs", "masked_SSP1_RCP26")
+masked_scenario_dir
 downscale_base_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", "downscale_SSP1_RCP26")
 
 # Ensure the output directory exists
 if (!dir.exists(downscale_base_dir)) {
-  dir.create(downscale_base_dir, recursive = TRUE)
+  dir.create(masked_scenario_dir, recursive = TRUE)
 }
 
 
 
 # Load the masked PLUM file for 2022 to extract layer names to be used in the layer classes matching matrix
 masked_plum_file_path <- file.path(masked_scenario_dir, "masked_s1_2022_SSP1_RCP26.tif")
-masked_plum_raster <- rast(masked_plum_file_path)
+masked_plum_file_path
+masked_plum_raster <- rast(masked_scenario_dir, "masked_s1_2022_SSP1_RCP26.tif")
 
 
 # Extract and inspect layer names from the PLUM raster
