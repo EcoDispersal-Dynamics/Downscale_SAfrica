@@ -9,8 +9,7 @@ base_dir <- getwd()
 
 # Paths for MODIS and PLUM data
 modis_reference_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "MODIS_LandCover_2021_SouthernAfrica.tif")
-masked_scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref-PLUM_SSPs", "masked_SSP1_RCP26")
-masked_scenario_dir
+masked_scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "masked_SSP1_RCP26")
 downscale_base_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", "downscale_SSP1_RCP26")
 
 # Ensure the output directory exists
@@ -22,8 +21,7 @@ if (!dir.exists(downscale_base_dir)) {
 
 # Load the masked PLUM file for 2022 to extract layer names to be used in the layer classes matching matrix
 masked_plum_file_path <- file.path(masked_scenario_dir, "masked_s1_2022_SSP1_RCP26.tif")
-masked_plum_file_path
-masked_plum_raster <- rast(masked_scenario_dir, "masked_s1_2022_SSP1_RCP26.tif")
+masked_plum_raster <- rast(masked_plum_file_path)
 
 
 # Extract and inspect layer names from the PLUM raster
@@ -53,19 +51,16 @@ levels(modis_raster)
 
 # Downscale PLUM data for years 2022 to 2030 using updated paths and iterative reference map updates
 
-# Load modis reference map, ignore this, it does not work
 modis_ref_map_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map.tif")
 
 
 # Reload the raster from the saved file
 modis_ref_map <- rast(modis_ref_map_path)
-
-
-# Reload the raster from the saved file
-modis_ref_map <- rast(modis_ref_map_path)
+unique(values(modis_ref_map))
 
 # Extract unique non-NA values
 unique_values <- sort(unique(values(modis_ref_map), na.rm = TRUE))
+unique_values
 
 # Create a mapping from original values to sequential values (1, 2, ..., length of unique_values)
 value_map <- data.frame(from = unique_values, to = seq_along(unique_values))
@@ -168,6 +163,17 @@ match_LC_classes_1 <- match_LC_classes_1[, levels(modis_ref_map_2)[[1]]$name]
 
 # Verify the matrix setup
 print(match_LC_classes_1)
+View(match_LC_classes_1)
+
+# Create a DataTable with scrollX and pagination
+datatable(
+  match_LC_classes_1, 
+  options = list(
+    pageLength = 5,  # Number of rows per page
+    scrollX = TRUE   # Enable horizontal scrolling
+  )
+)
+
 
 # Check dimensions
 print(dim(match_LC_classes_1))
@@ -541,7 +547,6 @@ downscaleLC(
   output_file_prefix = "MODIS_PLUM_500m_s4",
   output_dir_path = downscale_output_dir
 )
-
 
 
 
