@@ -7,10 +7,12 @@ base_dir <- getwd()
 library(terra)
 
 # Define the path to the saved multi-layer raster for the year 2022 (or any other year)
-raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", "masked_SSP1_RCP26", "masked_s1_2022_SSP1_RCP26.tif")
+raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "masked_SSP1_RCP26", "masked_s1_2022_SSP1_RCP26.tif")
+raster_path_2 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "masked_SSP1_RCP26", "masked_s1_2023_SSP1_RCP26.tif")
 
-# Load the multi-layer raster for the year 2022
+# Load the multi-layer raster for the year 2022 and 2023
 multi_layer_raster <- rast(raster_path)
+multi_layer_raster_2 <- rast(raster_path_2)
 multi_layer_raster
 plot(multi_layer_raster)
 crs(multi_layer_raster)
