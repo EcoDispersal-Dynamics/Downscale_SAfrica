@@ -149,6 +149,8 @@ modis_task$start()
 # This raster has a table generated with country codes to allow for
 # parallel processing and downscale simulations of the data with LandScale in R
 
+
+# This is a python code used to download the MODIS land cover data
 // Step 1: Inspect the shapefile attributes
 print("Region shapefile properties:", regionShapefile.propertyNames());
 
