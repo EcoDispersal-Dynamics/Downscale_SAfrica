@@ -17,12 +17,19 @@ multi_layer_raster
 plot(multi_layer_raster)
 crs(multi_layer_raster)
 units(multi_layer_raster)
-# remove the 13th layer
+# remove the 13th layer from both rasters
 multi_layer_raster <- multi_layer_raster[[1:12]]
+multi_layer_raster_2 <- multi_layer_raster_2[[1:12]]
+
+# Save the updated 2022 and 2023 rasters
+writeRaster(multi_layer_raster, file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "masked_SSP1_RCP26", "masked_s1_2022_SSP1_RCP26_test.tif"), overwrite = TRUE)
+writeRaster(multi_layer_raster_2, file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "masked_SSP1_RCP26", "masked_s1_2023_SSP1_RCP26_test.tif"), overwrite = TRUE)
+
+
+# Inspect the structure
 multi_layer_raster
 plot(multi_layer_raster)
 head(multi_layer_raster)
-# Check the structure of the raster
 print(multi_layer_raster)
 summary(multi_layer_raster)
 unique_multi_layer_raster_classes <- unique(values(multi_layer_raster))
