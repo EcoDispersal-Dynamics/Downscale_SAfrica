@@ -2,7 +2,7 @@
 title: "sub_SAfrica_LU_downscalling"
 author: "Markus Shiweda"
 date: "2024-10-22"
-output: word_document
+output: html_document
 always_allow_html: true
 ---
 
