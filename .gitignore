@@ -3,8 +3,8 @@
 # Ignore the entire folder
 LU_ref_dataset/LU_ref_PLUM_SSPs/*
 
-# Then ignore everything in this folder as well except 2 specific files
-LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
+# Then allow this folder only
+!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
 # Allow specific .tif files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26.tif
