@@ -13,7 +13,6 @@ LU_ref_dataset/LU_ref_PLUM_SSPs/*
 
 #
 .Rproj.user/
-sub_SAfrica_LU_downscalling.html
 # Ignore R session and history files
 .RData
 .Rhistory
