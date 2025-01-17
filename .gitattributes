@@ -6,5 +6,6 @@ LU_ref_dataset/LU_ref_ESA_100m/ESA_LC_2021_Zimbabwe_ID_100m.tif filter=lfs diff=
 *.tif filter=lfs diff=lfs merge=lfs -text
 *.tif.aux.xml filter=lfs diff=lfs merge=lfs -text
 interactive_table.html filter=lfs diff=lfs merge=lfs -text
-masked_s1_2022_SSP1_RCP26_test.tif filter=lfs diff=lfs merge=lfs -text
-masked_s1_2023_SSP1_RCP26_test.tif filter=lfs diff=lfs merge=lfs -text
+
+LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26_test.tif filter=lfs diff=lfs merge=lfs -text
+LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26_test.tif filter=lfs diff=lfs merge=lfs -text
