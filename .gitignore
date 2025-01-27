@@ -1,7 +1,7 @@
 # Exclude LU_downscalled_dataset folder and its contents
 
 # Ignore the entire folder
-LU_ref_dataset/LU_ref_PLUM_SSPs/*
+# LU_ref_dataset/LU_ref_PLUM_SSPs/
 
 # Then allow this sub-folder first
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
@@ -14,11 +14,12 @@ LU_ref_dataset/LU_ref_PLUM_SSPs/*
 # Secondly, allow this entire folder as well so that I can commit one country Angola test files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
 
-# Thirdly, Ignore all files in the croped folder
-LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
 
 # Allow Angola files from 2021-2022 to 2099-2100
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
+
+# Thirdly, Ignore all files in the croped folder
+LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
 
 #
 .Rproj.user/
