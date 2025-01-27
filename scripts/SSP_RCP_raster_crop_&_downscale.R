@@ -146,13 +146,14 @@ match_LC_classes["Urban", "LC11"] <- 1                                  # Urban 
 
 # Print the updated matrix for inspection
 cat("Updated Matching Matrix:\n")
-print(match_LC_classes)         # You will see that the M.matrix is updated with preferred % allocations     
+print(match_LC_classes)         # You will see that the M.Matrix is updated with preferred % allocations     
 
 
 #-------------------------------------------------------------------------------
 
+# Define the function to test downscaleLC 
+# Re-define paths
 
-## Define paths
 base_dir <- getwd()
 country_name <- "Angola"
 plum_raster_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped")
@@ -167,7 +168,7 @@ country_LUC_map_files <- list.files(
 # Sort files to ensure chronological order
 country_LUC_map_files <- sort(country_LUC_map_files)
 
-# Print the files being used for LC_deltas_file_list
+# Print the files being used for LC_deltas_file_list to make sure paths are present
 cat("Files included in LC_deltas_file_list:\n")
 print(country_LUC_map_files)
 
