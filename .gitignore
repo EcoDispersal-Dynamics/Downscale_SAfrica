@@ -3,13 +3,18 @@
 # Ignore the entire folder
 LU_ref_dataset/LU_ref_PLUM_SSPs/*
 
-# Then allow this folder only
+# Then allow this sub-folder first
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
 # Allow specific .tif files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26_test.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26_test.tif
+
+# Secondly, allow this entire folder as well so that I can commit one country Angola test files
+!LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
+
+
 
 #
 .Rproj.user/
