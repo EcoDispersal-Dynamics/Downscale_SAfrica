@@ -14,8 +14,6 @@ LU_ref_dataset/LU_ref_PLUM_SSPs/*
 # Secondly, allow this entire folder as well so that I can commit one country Angola test files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
 
-
-
 #
 .Rproj.user/
 # Ignore R session and history files
