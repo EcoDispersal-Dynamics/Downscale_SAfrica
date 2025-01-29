@@ -1,5 +1,8 @@
 # Libraries needed
 library(terra)
+library(LandScaleR) # NB: You can install the development version from GitHub 
+                    # using devtools::install_github(".../LandScaleR-dev.git")
+                    # the complete code is available at line 37 in the `install_packages.R` script
 
 # Skip the following code chunk since the data has already been processed
 
@@ -11,30 +14,30 @@ library(terra)
 
 # Base directory and paths
 base_dir <- getwd()
-shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
-modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
-modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
-plum_rasters_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction")
-plum_output_dir <- file.path(plum_rasters_dir, "SSP1_RCP26_fraction_croped")
-
-# # Ensure output directories exist
-# dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
-# dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
-
-# Load region/countries shapefile and MODIS raster
-regions <- vect(shapefile_path)
-modis_raster <- rast(modis_raster_path)
-
-# Reproject shapefile and MODIS raster to UTM zone 33 since I am testing with Angola
-utm_crs <- "EPSG:32633"  # UTM zone 33
-regions_utm <- project(regions, utm_crs)
-modis_raster_utm <- project(modis_raster, utm_crs)
-
-# List all original PLUM raster files for the SSP1_RCP26 scenario
-# that need to be cropped and projected to match the Angola MODIS raster
-plum_raster_files <- list.files(plum_rasters_dir, pattern = "SSP1_RCP26_LUC_fractions_.*\\.tif$", full.names = TRUE)
-
-# Uncomment the function if needs to process the data
+# shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+# modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
+# modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
+# plum_rasters_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction")
+# plum_output_dir <- file.path(plum_rasters_dir, "SSP1_RCP26_fraction_croped")
+# 
+# # # Ensure output directories exist
+# # dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
+# # dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
+# 
+# # Load region/countries shapefile and MODIS raster
+# regions <- vect(shapefile_path)
+# modis_raster <- rast(modis_raster_path)
+# 
+# # Reproject shapefile and MODIS raster to UTM zone 33 since I am testing with Angola
+# utm_crs <- "EPSG:32633"  # UTM zone 33
+# regions_utm <- project(regions, utm_crs)
+# modis_raster_utm <- project(modis_raster, utm_crs)
+# 
+# # List all original PLUM raster files for the SSP1_RCP26 scenario
+# # that need to be cropped and projected to match the Angola MODIS raster
+# plum_raster_files <- list.files(plum_rasters_dir, pattern = "SSP1_RCP26_LUC_fractions_.*\\.tif$", full.names = TRUE)
+# 
+# # Uncomment the function if needs to process the data
 
 # # Crop and save rasters for each country
 # for (country in unique(regions_utm$CNTRY_NAME)) {
@@ -61,7 +64,7 @@ plum_raster_files <- list.files(plum_rasters_dir, pattern = "SSP1_RCP26_LUC_frac
 #   }
 # }
 
-# End of cropping and reprojection script
+# End of cropping and re-projection script
 
 
 
@@ -78,8 +81,12 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 
 # Define paths to Angola rasters
 base_dir <- getwd()
-angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country", "Angola_modis_ref_map_2.tif")
-angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Angola_modis_ref_map_2.tif")
+angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
+                                     "SSP1_RCP26", "SSP1_RCP26_fraction", 
+                                     "SSP1_RCP26_fraction_croped", 
+                                     "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 
 # Load rasters
 angola_modis_raster <- rast(angola_modis_raster_path)
@@ -114,7 +121,7 @@ print(results)
 #
 # Extract PLUM layer names for row names
 plum_layer_names <- names(angola_plum_raster)
-
+plum_layer_names
 # Extract unique MODIS class values for column names
 modis_classes <- unique(values(angola_modis_raster)) # Extract unique values
 modis_classes <- sort(modis_classes[!is.na(modis_classes)]) # Remove NA and sort
@@ -215,10 +222,219 @@ downscaleLC_with_progress(
   match_LC_classes = match_LC_classes,
   kernel_radius = 1, # Update this if needed
   simulation_type = "deterministic",
-  discrete_output_map = TRUE,
+  discrete_output_map = FALSE,
   random_seed = 44,
   output_file_prefix = paste0(country_name, "_MODIS_PLUM_500m_s1"), # Include country name in prefix
   output_dir_path = downscale_output_dir
+)
+
+
+
+# -------------------------------------------------------------------------------
+
+# Second run with different parameters
+
+# Define base directory and paths
+base_dir <- getwd()
+country_name <- "Angola"
+
+# Manually specify the two raster files for testing
+LC_deltas_file_list <- list(
+  file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+            "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+            "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif"),
+  
+  file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+            "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+            "Angola_SSP1_RCP26_LUC_fractions_2022_2023.tif")
+)
+
+# Print file paths to verify correctness
+cat("Testing with the following raster files:\n")
+print(LC_deltas_file_list)
+
+# Reference map file for Angola
+country_ref_map_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                  "by_country", paste0(country_name, "_modis_ref_map_2.tif"))
+
+# Output directory
+downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
+                                  "downscale_SSP1_RCP26", "Downscale_by_country")
+
+# Run the downscaleLC function separately for each raster file
+downscaleLC(
+  ref_map_file_name = country_ref_map_file,
+  LC_deltas_file_list = LC_deltas_file_list,  # Manually defined file list
+  LC_deltas_type = "proportions",
+  ref_map_type = "discrete",
+  cell_size_unit = "m",
+  assign_ref_cells = FALSE,
+  match_LC_classes = match_LC_classes,
+  kernel_radius = 1,  # Update this if needed
+  simulation_type = "deterministic",
+  discrete_output_map = FALSE,
+  random_seed = 44,
+  output_file_prefix = paste0(country_name, "_MODIS_PLUM_500m_s1"),  # Include country name in prefix
+  output_dir_path = downscale_output_dir
+)
+
+
+#--------------------------------------------------------------------------------
+#
+#
+# Third run with different parameters 
+
+# Define base directory and paths
+base_dir <- getwd()
+country_Angola <- "Angola"
+
+# Manually specify the two raster files (NO LOOP)
+masked_plum_file_Angola_2022 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                          "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                          paste0(country_Angola, "_SSP1_RCP26_LUC_fractions_2021_2022.tif"))
+
+masked_plum_file_Angola_2023 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                          "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                          paste0(country_Angola, "_SSP1_RCP26_LUC_fractions_2022_2023.tif"))
+
+# Reference map file for Angola
+country_ref_map_file_Angola <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                         "by_country", paste0(country_Angola, "_modis_ref_map_2.tif"))
+Angola_ref_map <- terra::rast(country_ref_map_file_Angola)
+plot(Angola_ref_map)
+unique <- unique(values(Angola_ref_map))
+print(unique)
+
+# Output directory
+downscale_output_dir_Angola <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
+                                         "downscale_SSP1_RCP26", "Downscale_by_country", country_Angola)
+
+# Print paths to verify correctness
+cat("Testing with the following raster files for", country_Angola, ":\n")
+print(masked_plum_file_Angola_2022)
+print(masked_plum_file_Angola_2023)
+
+# Run the downscaleLC function with EXPLICIT FILE LIST (NO LOOP)
+downscaleLC(
+  ref_map_file_name = country_ref_map_file_Angola,
+  LC_deltas_file_list = list(masked_plum_file_Angola_2022, masked_plum_file_Angola_2023),  # Explicit list of files
+  LC_deltas_type = "proportions",
+  ref_map_type = "discrete",
+  cell_size_unit = "m",
+  assign_ref_cells = FALSE,
+  match_LC_classes = match_LC_classes,
+  kernel_radius = 1,  # Update this if needed
+  simulation_type = "deterministic",
+  discrete_output_map = FALSE,
+  random_seed = 44,
+  output_file_prefix = paste0(country_Angola, "_MODIS_PLUM_500m_s1"),  # Include country name in prefix
+  output_dir_path = downscale_output_dir_Angola
+)
+
+#--------------------------------------------------------------------------------
+
+# Try a smaller different country 
+# Fouth run with different parameters
+
+# Define base directory and paths
+base_dir <- getwd()
+country_Eswatini <- "Eswatini"
+
+
+# Manually specify the two raster files (NO LOOP)
+masked_plum_file_Eswatini_2022 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                            "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                            paste0(country_Eswatini, "_SSP1_RCP26_LUC_fractions_2021_2022.tif"))
+
+masked_plum_file_Eswatini_2023 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                            "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                            paste0(country_Eswatini, "_SSP1_RCP26_LUC_fractions_2022_2023.tif"))
+
+# Reference map file for Eswatini
+country_ref_map_file_Eswatini <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                           "by_country", paste0(country_Eswatini, "_modis_ref_map_2.tif"))
+
+# Output directory
+downscale_output_dir_Eswatini <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
+                                           "downscale_SSP1_RCP26", "Downscale_by_country", country_Eswatini)
+
+# Print paths to verify correctness
+cat("Testing with the following raster files for", country_Eswatini, ":\n")
+print(masked_plum_file_Eswatini_2022)
+print(masked_plum_file_Eswatini_2023)
+
+# Load the reference raster for Eswatini
+eswatini_ref_map <- terra::rast(country_ref_map_file_Eswatini)
+plot(eswatini_ref_map)
+# Check unique land cover class values
+unique(eswatini_ref_map)
+colnames(match_LC_classes)
+
+# Run the downscaleLC function
+downscaleLC(
+  ref_map_file_name = country_ref_map_file_Eswatini,
+  LC_deltas_file_list = list(masked_plum_file_Eswatini_2022, masked_plum_file_Eswatini_2023),
+  LC_deltas_type = "proportions",
+  ref_map_type = "discrete",
+  cell_size_unit = "m",
+  assign_ref_cells = FALSE,
+  match_LC_classes = match_LC_classes,
+  kernel_radius = 1,
+  simulation_type = "deterministic",
+  discrete_output_map = FALSE,
+  random_seed = 44,
+  output_file_prefix = paste0(country_Eswatini, "_MODIS_PLUM_500m_s1"),
+  output_dir_path = downscale_output_dir_Eswatini
+)
+
+
+#--------------------------------------------------------------------------------
+#
+#
+# Try another smaller different country 
+# Fifth run with different parameters
+
+# Define base directory and paths
+base_dir <- getwd()
+country_Lesotho <- "Lesotho"
+
+# Manually specify the two raster files (NO LOOP)
+masked_plum_file_Lesotho_2022 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                           "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                           paste0(country_Lesotho, "_SSP1_RCP26_LUC_fractions_2021_2022.tif"))
+
+masked_plum_file_Lesotho_2023 <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", 
+                                           "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped", 
+                                           paste0(country_Lesotho, "_SSP1_RCP26_LUC_fractions_2022_2023.tif"))
+
+# Reference map file for Lesotho
+country_ref_map_file_Lesotho <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                          "by_country", paste0(country_Lesotho, "_modis_ref_map_2.tif"))
+
+# Output directory
+downscale_output_dir_Lesotho <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
+                                          "downscale_SSP1_RCP26", "Downscale_by_country", country_Lesotho)
+
+# Print paths to verify correctness
+cat("Testing with the following raster files for", country_Lesotho, ":\n")
+print(masked_plum_file_Lesotho_2022)
+print(masked_plum_file_Lesotho_2023)
+
+# Run the downscaleLC function
+downscaleLC(
+  ref_map_file_name = country_ref_map_file_Lesotho,
+  LC_deltas_file_list = list(masked_plum_file_Lesotho_2022, masked_plum_file_Lesotho_2023),
+  LC_deltas_type = "proportions",
+  ref_map_type = "discrete",
+  cell_size_unit = "m",
+  assign_ref_cells = FALSE,
+  match_LC_classes = match_LC_classes,
+  kernel_radius = 1,
+  simulation_type = "deterministic",
+  discrete_output_map = FALSE,
+  random_seed = 44,
+  output_file_prefix = paste0(country_Lesotho, "_MODIS_PLUM_500m_s1"),
+  output_dir_path = downscale_output_dir_Lesotho
 )
 
 
