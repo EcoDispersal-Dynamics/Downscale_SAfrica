@@ -37,6 +37,6 @@ install_if_needed('Rcpp')
 # devtools::install_github("TamsinWoodman/LandScaleR-dev", ref = "dev", build_vignettes = TRUE)
 library(LandScaleR)
 # # Confirm if dev version is the one installed
-# packageDescription("LandScaleR")
+packageDescription("LandScaleR")
 # devtools::session_info()
 
