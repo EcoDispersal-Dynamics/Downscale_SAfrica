@@ -157,12 +157,13 @@ print(match_LC_classes)         # You will see that the M.Matrix is updated with
 
 
 #-------------------------------------------------------------------------------
-
+#
+#0000000000000000000000000000000000000000000000000000000000000000000000000000000
 # Define the function to test downscaleLC 
 # Re-define paths
 
 base_dir <- getwd()
-country_name <- "Angola"
+country_Angola <- "Angola"
 plum_raster_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped")
 
 # List all PLUM raster files for Angola
@@ -183,7 +184,7 @@ print(country_LUC_map_files)
 country_ref_map_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country", paste0(country_name, "_modis_ref_map_2.tif"))
 
 # Output directory
-downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", "downscale_SSP1_RCP26", "Downscale_by_country")
+downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", "downscale_SSP1_RCP26", "Downscale_by_country", "Angola")
 
 
 
@@ -227,6 +228,100 @@ downscaleLC_with_progress(
   output_file_prefix = paste0(country_name, "_MODIS_PLUM_500m_s1"), # Include country name in prefix
   output_dir_path = downscale_output_dir
 )
+
+#--------------------------------------------------------------------------------
+# 111111111111111111111111111111111111111111111111111111111111111111111111111111
+# Test with updated reference maps at every iteration
+
+# Define paths and variables
+base_dir <- getwd()
+country_name <- "Angola"
+
+# Path to the original MODIS reference map
+country_ref_map_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                  "by_country", paste0(country_name, "_modis_ref_map_2.tif"))
+
+# Directory for PLUM raster files
+plum_raster_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
+                             "SSP1_RCP26", "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped")
+
+# List and sort all PLUM raster files for Angola
+country_LUC_map_files <- list.files(
+  path = plum_raster_dir,
+  pattern = paste0("^", country_name, "_SSP1_RCP26_LUC_fractions_\\d{4}_\\d{4}\\.tif$"),
+  full.names = TRUE
+)
+country_LUC_map_files <- sort(country_LUC_map_files)
+
+# Verify files
+cat("Files included in LC_deltas_file_list:\n")
+print(country_LUC_map_files)
+
+# Define output directory for downscaled results
+downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
+                                  "downscale_SSP1_RCP26", "Downscale_by_country", country_name)
+
+# Custom wrapper for downscaleLC with reference map updates and progress messages
+downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
+  cat("Starting downscaling process...\n")
+  
+  # Initialize the reference map with the original MODIS map
+  current_ref_map <- ref_map_file_name  # This will be updated with the output file in each iteration
+  
+  for (file in LC_deltas_file_list) {
+    # Extract years from the file name (e.g., "2021_2022")
+    years <- gsub(".*_(\\d{4}_\\d{4})\\.tif$", "\\1", file)
+    cat(sprintf("Processing year(s): %s...\n", years))
+    
+    # Define the output file path for the current downscaled map
+    output_file <- file.path(downscale_output_dir, paste0("Downscaled_ref_map_", years, ".tif"))
+    
+    # Run the downscaleLC function, dynamically passing the required output_file_prefix
+    downscaleLC(
+      ref_map_file_name = current_ref_map,       # Use the current reference map
+      LC_deltas_file_list = list(file),          # Process one file at a time
+      output_file_prefix = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),  # Provide the required prefix
+      ...                                        # Remaining parameters are passed through ...
+    )
+    
+    # Update the reference map to the new downscaled output
+    current_ref_map <- output_file  # This becomes the reference for the next timestep
+  }
+  
+  cat("Downscaling process completed!\n")
+}
+
+# Run the custom wrapper function
+downscaleLC_with_progress(
+  ref_map_file_name = country_ref_map_file,
+  LC_deltas_file_list = country_LUC_map_files,
+  LC_deltas_type = "proportions",
+  ref_map_type = "discrete",
+  cell_size_unit = "m",
+  assign_ref_cells = FALSE,
+  match_LC_classes = match_LC_classes,
+  kernel_radius = 1,
+  simulation_type = "deterministic",
+  discrete_output_map = FALSE,
+  random_seed = 44,
+  output_dir_path = downscale_output_dir
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
