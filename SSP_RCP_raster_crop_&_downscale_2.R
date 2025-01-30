@@ -1,16 +1,3 @@
-# Ensuring the `here` package is installed to resolve the working directory issue on OWL HPC
-if (!requireNamespace("here", quietly = TRUE)) {
-  install.packages("here")
-}
-
-# Load the here package
-library(here)
-
-# Set the working directory to the script's directory
-setwd(here::here("scripts"))
-
-# Print the working directory to verify
-print(getwd())
 
 
 # Libraries needed
