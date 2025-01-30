@@ -1,3 +1,18 @@
+# Ensure the rstudioapi package is installed
+if (!requireNamespace("rstudioapi", quietly = TRUE)) {
+  install.packages("rstudioapi")
+}
+
+# Get the directory of the current script
+script_dir <- dirname(rstudioapi::getActiveDocumentContext()$path)
+
+# Set the working directory to the script's directory
+setwd(script_dir)
+
+# Print the working directory to verify
+print(getwd())
+
+
 # Libraries needed
 library(terra)
 library(LandScaleR) # NB: You can install the development version from GitHub 
