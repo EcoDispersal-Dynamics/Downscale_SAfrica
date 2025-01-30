@@ -237,7 +237,7 @@ downscaleLC_with_progress(
   match_LC_classes = match_LC_classes,
   kernel_radius = 1,
   simulation_type = "deterministic",
-  discrete_output_map = FALSE,
+  discrete_output_map = TRUE,
   random_seed = 44,
   output_dir_path = downscale_output_dir
 )
