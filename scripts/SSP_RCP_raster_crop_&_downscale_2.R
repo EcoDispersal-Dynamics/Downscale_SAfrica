@@ -1,13 +1,13 @@
-# Ensure the rstudioapi package is installed
-if (!requireNamespace("rstudioapi", quietly = TRUE)) {
-  install.packages("rstudioapi")
+# Ensuring the `here` package is installed to resolve the working directory issue on OWL HPC
+if (!requireNamespace("here", quietly = TRUE)) {
+  install.packages("here")
 }
 
-# Get the directory of the current script
-script_dir <- dirname(rstudioapi::getActiveDocumentContext()$path)
+# Load the here package
+library(here)
 
 # Set the working directory to the script's directory
-setwd(script_dir)
+setwd(here::here("scripts"))
 
 # Print the working directory to verify
 print(getwd())
