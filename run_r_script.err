@@ -1,0 +1,10 @@
+terra 1.7.78
+LandScaleR version 1.0.2
+Copyright (C) 2021-2023 Tamsin Woodman
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it and/or modify it under certain conditions;
+type 'LandScaleR_license' for details.
+Error: [rast] cannot open this file as a SpatRaster: /bg/data/kaza_elephant/Downscale_SAfrica/LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif
+In addition: Warning message:
+`/bg/data/kaza_elephant/Downscale_SAfrica/LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif' not recognized as a supported file format. (GDAL error 4) 
+Execution halted

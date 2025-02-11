@@ -2,10 +2,12 @@
 
 # Libraries needed
 library(terra)
+gdal(lib="")
 library(LandScaleR) # NB: You can install the development version from GitHub 
                     # using devtools::install_github(".../LandScaleR-dev.git")
                     # the complete code is available at line 37 in the `install_packages.R` script
-
+#library(sf)
+#library(rgdal)
 # Skip the following code chunk since the data has already been processed
 
 # This first code chuck is for data processing: Specific country data extraction
@@ -84,17 +86,17 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 # Define paths to Angola rasters
 base_dir <- getwd()
 angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Angola_modis_ref_map_2.tif")
+                                      "by_country", "Angola_modis_ref_map_3.tif")
 angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
                                      "SSP1_RCP26", "SSP1_RCP26_fraction", 
                                      "SSP1_RCP26_fraction_croped", 
                                      "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 
 # Load rasters
-angola_modis_raster <- rast(angola_modis_raster_path)
-unique(angola_modis_raster)
+#angola_modis_raster <- rast(angola_modis_raster_path)
+#unique(angola_modis_raster)
 
-angola_plum_raster <- rast(angola_plum_raster_path)
+#angola_plum_raster <- rast(angola_plum_raster_path)
 
 # Perform inspection
 results <- list(

@@ -15,7 +15,8 @@ module purge
 module load r/4.2.2-gcc-11.3.1
 
 cd ${rundir}
-Rscript SSP_RCP_raster_crop_&_downscale_2.R
+which Rscript
+Rscript "SSP_RCP_raster_crop_&_downscale_2.R"
 set exitcode = $?
 cd -
 exit ${exitcode}
