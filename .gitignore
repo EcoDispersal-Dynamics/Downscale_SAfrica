@@ -19,7 +19,7 @@ LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fracti
 
 # Allow Angola files from 2021-2022 to 2099-2100
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
-
+!LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*_3.tif
 
 #
 .Rproj.user/
