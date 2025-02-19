@@ -31,12 +31,15 @@ install_if_needed('Rcpp')
 # }
 
 
+# Set the GitHub PAT for authentication
+# Sys.setenv(GITHUB_PAT = "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")
+
 # # Install -dev version of LandScaleR from GitHub
-# # 
-# 
+#
+#
 # devtools::install_github("TamsinWoodman/LandScaleR-dev", ref = "dev", build_vignettes = TRUE)
 library(LandScaleR)
-# # Confirm if dev version is the one installed
+# Confirm if dev version is the one installed
 packageDescription("LandScaleR")
-# devtools::session_info()
+
 
