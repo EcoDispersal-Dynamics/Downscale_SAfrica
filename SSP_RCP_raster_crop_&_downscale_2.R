@@ -93,10 +93,10 @@ angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SS
                                      "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 
 # Load rasters
-#angola_modis_raster <- rast(angola_modis_raster_path)
-#unique(angola_modis_raster)
+angola_modis_raster <- rast(angola_modis_raster_path)
+unique(angola_modis_raster)
 
-#angola_plum_raster <- rast(angola_plum_raster_path)
+angola_plum_raster <- rast(angola_plum_raster_path)
 
 # Perform inspection
 results <- list(
@@ -194,7 +194,7 @@ country_LUC_map_files <- sort(country_LUC_map_files)
 
 # Verify files
 cat("Files included in LC_deltas_file_list:\n")
-print(country_LUC_map_files)
+# print(country_LUC_map_files)
 
 # Define output directory for downscaled results
 downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m", 
