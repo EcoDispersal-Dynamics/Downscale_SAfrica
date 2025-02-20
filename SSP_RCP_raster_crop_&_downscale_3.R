@@ -85,12 +85,9 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 
 # Define paths to Angola rasters
 base_dir <- getwd()
-angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+angola_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
                                       "by_country", "Angola_modis_ref_map_3.tif")
-angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
-                                     "SSP1_RCP26", "SSP1_RCP26_fraction", 
-                                     "SSP1_RCP26_fraction_croped", 
-                                     "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+angola_plum_raster <- file.path(base_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022_3.tif")
 
 # Load rasters
 #angola_modis_raster <- rast(angola_modis_raster_path)
@@ -99,24 +96,24 @@ angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SS
 #angola_plum_raster <- rast(angola_plum_raster_path)
 
 # Perform inspection
-results <- list(
-  "Head of Angola MODIS Raster" = head(values(angola_modis_raster)),
-  "Head of Angola PLUM Raster" = head(values(angola_plum_raster)),
-  "Unique Values in Angola MODIS Raster" = unique(values(angola_modis_raster)),
-  "Unique Values in Angola PLUM Raster" = unique(values(angola_plum_raster)),
-  "CRS Comparison" = list("MODIS CRS" = crs(angola_modis_raster), "PLUM CRS" = crs(angola_plum_raster)),
-  "Extent Comparison" = list("MODIS Extent" = ext(angola_modis_raster), "PLUM Extent" = ext(angola_plum_raster)),
-  "Resolution Comparison" = list("MODIS Resolution" = res(angola_modis_raster), "PLUM Resolution" = res(angola_plum_raster)),
-  "Units Comparison" = list("MODIS Units" = crs(angola_modis_raster, describe = TRUE)$UNIT, 
-                            "PLUM Units" = crs(angola_plum_raster, describe = TRUE)$UNIT),
-  "Data Type Comparison" = list("MODIS Data Type" = datatype(angola_modis_raster), "PLUM Data Type" = datatype(angola_plum_raster)),
-  "Layer Count" = list("MODIS Layer Count" = nlyr(angola_modis_raster), "PLUM Layer Count" = nlyr(angola_plum_raster)),
-  "Summary Statistics" = list("MODIS Summary" = global(angola_modis_raster, fun = "mean", na.rm = TRUE),
-                              "PLUM Summary" = global(angola_plum_raster, fun = "mean", na.rm = TRUE))
-)
+#results <- list(
+#  "Head of Angola MODIS Raster" = head(values(angola_modis_raster)),
+#  "Head of Angola PLUM Raster" = head(values(angola_plum_raster)),
+#  "Unique Values in Angola MODIS Raster" = unique(values(angola_modis_raster)),
+#  "Unique Values in Angola PLUM Raster" = unique(values(angola_plum_raster)),
+#  "CRS Comparison" = list("MODIS CRS" = crs(angola_modis_raster), "PLUM CRS" = crs(angola_plum_raster)),
+#  "Extent Comparison" = list("MODIS Extent" = ext(angola_modis_raster), "PLUM Extent" = ext(angola_plum_raster)),
+#  "Resolution Comparison" = list("MODIS Resolution" = res(angola_modis_raster), "PLUM Resolution" = res(angola_plum_raster)),
+#  "Units Comparison" = list("MODIS Units" = crs(angola_modis_raster, describe = TRUE)$UNIT, 
+#                            "PLUM Units" = crs(angola_plum_raster, describe = TRUE)$UNIT),
+#  "Data Type Comparison" = list("MODIS Data Type" = datatype(angola_modis_raster), "PLUM Data Type" = datatype(angola_plum_raster)),
+#  "Layer Count" = list("MODIS Layer Count" = nlyr(angola_modis_raster), "PLUM Layer Count" = nlyr(angola_plum_raster)),
+#  "Summary Statistics" = list("MODIS Summary" = global(angola_modis_raster, fun = "mean", na.rm = TRUE),
+#                              "PLUM Summary" = global(angola_plum_raster, fun = "mean", na.rm = TRUE))
+#)
 
 # Print all inspection results
-print(results)
+#print(results)
 
 
 #-------------------------------------------------------------------------------
@@ -128,8 +125,8 @@ print(results)
 # Extract PLUM layer names for row names
 plum_layer_names <- names(angola_plum_raster)
 plum_layer_names
-unique(values(angola_modis_raster))
-unique(angola_modis_raster)
+#unique(values(angola_modis_raster))
+#unique(angola_modis_raster)
 
 # Extract unique MODIS class values for column names
 modis_classes <- unique(values(angola_modis_raster)) # Extract unique values
