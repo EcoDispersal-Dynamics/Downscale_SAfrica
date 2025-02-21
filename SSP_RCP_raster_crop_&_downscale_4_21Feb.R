@@ -180,7 +180,7 @@ country_name <- "Angola"
 
 # Path to the original MODIS reference map (used only in the first iteration)
 country_ref_map_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                  "by_country", paste0(country_name, "_modis_ref_map_3.tif"))
+                                  "by_country", paste0(country_name, "_modis_ref_map_2.tif"))
 
 # Directory containing PLUM transition maps
 plum_raster_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
@@ -209,13 +209,13 @@ if (!dir.exists(downscale_output_dir)) {
 }
 
 
-# Define the dynamic downscaling function with RAM monitoring
+# Define the dynamic downscaling function with live-time and RAM monitoring
 downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
   start_time <- Sys.time()
   cat(sprintf("Starting downscaling process at: %s\n", start_time))
   
   log_file <- file.path(base_dir, "downscaling_log.txt")
-  writeLines(sprintf("Processing started at: %s", start_time), log_file)
+  cat(sprintf("Processing started at: %s\n", start_time), file=log_file, append=TRUE)
   
   # Ensure the initial reference map exists
   if (!file.exists(ref_map_file_name)) {
@@ -230,13 +230,13 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     years <- gsub(".*_(\\d{4}_\\d{4})\\.tif$", "\\1", file)
     
     log_message <- sprintf("[%d/%d] Processing %s at %s", i, length(LC_deltas_file_list), file, Sys.time())
-    writeLines(log_message, log_file, append=TRUE)
     cat(log_message, "\n")
+    cat(log_message, "\n", file=log_file, append=TRUE)
     
     # Check if transition file exists
     if (!file.exists(file)) {
       warning(sprintf("WARNING: Transition map missing, skipping: %s\n", file))
-      writeLines(sprintf("WARNING: File %s is missing!", file), log_file, append=TRUE)
+      cat(sprintf("WARNING: File %s is missing!\n", file), file=log_file, append=TRUE)
       next
     }
     
@@ -270,20 +270,21 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
       current_ref_map <- discrete_output_file  # Update reference to the latest discrete map
     } else {
       warning(sprintf("WARNING: Expected reference map not found: %s. Using last available map instead.", discrete_output_file))
-      writeLines(sprintf("WARNING: Missing next reference map: %s", discrete_output_file), log_file, append=TRUE)
+      cat(sprintf("WARNING: Missing next reference map: %s\n", discrete_output_file), file=log_file, append=TRUE)
     }
     
     log_message <- sprintf("Completed %s in %.2f seconds | RAM Before: %.2f MB | RAM After: %.2f MB", 
                            file, time_taken, ram_before, ram_after)
-    writeLines(log_message, log_file, append=TRUE)
     cat(log_message, "\n")
+    cat(log_message, "\n", file=log_file, append=TRUE)
   }
   
   end_time <- Sys.time()
   total_time <- as.numeric(difftime(end_time, start_time, units="mins"))
   cat(sprintf("Downscaling completed in %.2f minutes\n", total_time))
-  writeLines(sprintf("Downscaling completed at: %s (Total: %.2f mins)", end_time, total_time), log_file, append=TRUE)
+  cat(sprintf("Downscaling completed at: %s (Total: %.2f mins)\n", end_time, total_time), file=log_file, append=TRUE)
 }
+
 
 
 
