@@ -143,7 +143,7 @@ match_LC_classes <- matrix(
   data = 0, # Initialize the matrix with zeros
   nrow = length(plum_layer_names), # Number of rows matches the PLUM layers
   ncol = length(modis_classes),   # Number of columns matches the unique MODIS classes
-  dimnames = list(plum_layer_names, paste0(modis_classes)) # Dynamic row and column names
+  dimnames = list(plum_layer_names, paste0("LC", modis_classes)) # Dynamic row and column names
 )
 
 # Print the matrix for inspection
@@ -155,13 +155,13 @@ print(match_LC_classes)             # You will see that the matrix is initialize
 
 
 # Populate the matrix with your preferred allocations, note our discussion on the allocations % strategy
-match_LC_classes["Cropland", c("12", "14")] <- c(0.5, 0.5)           # Cropland allocations
-match_LC_classes["Pasture", "10"] <- 1                                 # Pasture allocation
-match_LC_classes["TimberForest", c("5", "7", "9")] <- c(0.6, 0.2, 0.2) # TimberForest allocations
-match_LC_classes["UnmanagedForest", c("4", "5", "6")] <- c(0.4, 0.3,0.3) # UnmanagedForest allocations
-match_LC_classes["OtherNatural", c("12", "14")] <- c(0.5, 0.5)       # OtherNatural allocations
-match_LC_classes["Barren", "14"] <- 1                                  # Barren allocation
-match_LC_classes["Urban", "11"] <- 1                                  # Urban allocation
+match_LC_classes["Cropland", c("LC12", "LC14")] <- c(0.5, 0.5)           # Cropland allocations
+match_LC_classes["Pasture", "LC10"] <- 1                                 # Pasture allocation
+match_LC_classes["TimberForest", c("LC5", "LC7", "LC9")] <- c(0.6, 0.2, 0.2) # TimberForest allocations
+match_LC_classes["UnmanagedForest", c("LC4", "LC5", "LC6")] <- c(0.4, 0.3,0.3) # UnmanagedForest allocations
+match_LC_classes["OtherNatural", c("LC12", "LC14")] <- c(0.5, 0.5)       # OtherNatural allocations
+match_LC_classes["Barren", "LC14"] <- 1                                  # Barren allocation
+match_LC_classes["Urban", "LC11"] <- 1                                  # Urban allocation
 
 # Print the updated matrix for inspection
 cat("Updated Matching Matrix:\n")
