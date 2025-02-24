@@ -94,12 +94,13 @@ angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SS
 
 # Load rasters
 angola_modis_raster <- rast(angola_modis_raster_path)
-# plot(angola_modis_raster)
+plot(angola_modis_raster)
 unique(angola_modis_raster)
 print(names(angola_modis_raster))
-print(crs(angola_modis_raster))
+print(levels(angola_modis_raster))
 
 angola_plum_raster <- rast(angola_plum_raster_path)
+unique(angola_plum_raster)
 
 # Perform inspection
 results <- list(
@@ -324,3 +325,20 @@ downscaleLC_with_progress(
 
 # End of the 4th downscaling script for Angola
 
+# Load first downscaled reference map
+first_downscaled_ref_map_path <- file.path(
+  base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m",
+  "downscale_SSP1_RCP26", "Downscale_by_country", "Angola_scr_5",
+  "Angola_MODIS_PLUM_500m_s1_2021_2022_Discrete_Time1.tif"
+)
+
+first_downscaled_ref_map <- rast(first_downscaled_ref_map_path)
+levels(first_downscaled_ref_map)
+plot(first_downscaled_ref_map)
+# Check unique values
+unique_classes_first_downscaled <- unique(values(first_downscaled_ref_map))
+print(unique_classes_first_downscaled)
+
+# Compare with `match_LC_classes`
+print(colnames(match_LC_classes))
+setdiff(colnames(match_LC_classes), paste0("LC", unique_classes_first_downscaled))
