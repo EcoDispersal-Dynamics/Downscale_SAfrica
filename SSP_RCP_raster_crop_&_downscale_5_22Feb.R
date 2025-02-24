@@ -157,12 +157,12 @@ print(match_LC_classes)             # You will see that the matrix is initialize
 
 # Populate the matrix with your preferred allocations, note our discussion on the allocations % strategy
 match_LC_classes["Cropland", c("LC12", "LC14")] <- c(0.5, 0.5)           # Cropland allocations
-match_LC_classes["Pasture", "LC10"] <- 1                                 # Pasture allocation
-match_LC_classes["TimberForest", c("LC5", "LC7", "LC9")] <- c(0.6, 0.2, 0.2) # TimberForest allocations
-match_LC_classes["UnmanagedForest", c("LC4", "LC5", "LC6")] <- c(0.4, 0.3,0.3) # UnmanagedForest allocations
+match_LC_classes["Pasture", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC11", "LC16")] <- c(0.05, 0.2, 0.05, 0.2, 0.3, 0.15, 0.05)                                 # Pasture allocation
+match_LC_classes["TimberForest", c("LC1", "LC2", "LC4", "LC5", "LC6", "LC7", "LC8", "LC9")] <- c(0.05, 0.2, 0.3, 0.1, 0.1, 0.1, 0.05, 0.1) # TimberForest allocations
+match_LC_classes["UnmanagedForest", c("LC1", "LC2", "LC4", "LC5", "LC6")] <- c(0.1, 0.2, 0.4, 0.2,0.2) # UnmanagedForest allocations
 match_LC_classes["OtherNatural", c("LC12", "LC14")] <- c(0.5, 0.5)       # OtherNatural allocations
-match_LC_classes["Barren", "LC14"] <- 1                                  # Barren allocation
-match_LC_classes["Urban", "LC11"] <- 1                                  # Urban allocation
+match_LC_classes["Barren", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC16", "LC17")] <- c(0.1, 0.1, 0.1, 0.1, 0.05, 0.5, 0.05)                                  # Barren allocation
+match_LC_classes["Urban", "LC13"] <- 1                                  # Urban allocation
 
 # Print the updated matrix for inspection
 cat("Updated Matching Matrix:\n")
