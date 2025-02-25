@@ -157,11 +157,11 @@ print(match_LC_classes)             # You will see that the matrix is initialize
 
 # Populate the matrix with your preferred allocations, note our discussion on the allocations % strategy
 match_LC_classes["Cropland", c("LC12", "LC14")] <- c(0.5, 0.5)           # Cropland allocations
-match_LC_classes["Pasture", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC11", "LC16")] <- c(0.05, 0.2, 0.05, 0.2, 0.3, 0.15, 0.05)                                 # Pasture allocation
-match_LC_classes["TimberForest", c("LC1", "LC2", "LC4", "LC5", "LC6", "LC7", "LC8", "LC9")] <- c(0.05, 0.2, 0.3, 0.1, 0.1, 0.1, 0.05, 0.1) # TimberForest allocations
-match_LC_classes["UnmanagedForest", c("LC1", "LC2", "LC4", "LC5", "LC6")] <- c(0.1, 0.2, 0.4, 0.2,0.2) # UnmanagedForest allocations
+match_LC_classes["Pasture", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC11", "LC16")] <- c(0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1)                                 # Pasture allocation
+match_LC_classes["TimberForest", c("LC1", "LC2", "LC4", "LC5", "LC6", "LC7", "LC8", "LC9")] <- c(0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1) # TimberForest allocations
+match_LC_classes["UnmanagedForest", c("LC1", "LC2", "LC4", "LC5", "LC6")] <- c(0.1, 0.2, 0.3, 0.2,0.2) # UnmanagedForest allocations
 match_LC_classes["OtherNatural", c("LC12", "LC14")] <- c(0.5, 0.5)       # OtherNatural allocations
-match_LC_classes["Barren", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC16", "LC17")] <- c(0.1, 0.1, 0.1, 0.1, 0.05, 0.5, 0.05)                                  # Barren allocation
+match_LC_classes["Barren", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC16")] <- c(0.1, 0.1, 0.1, 0.2, 0.1, 0.4)                                  # Barren allocation
 match_LC_classes["Urban", "LC13"] <- 1                                  # Urban allocation
 
 # Print the updated matrix for inspection
@@ -333,12 +333,12 @@ first_downscaled_ref_map_path <- file.path(
 )
 
 first_downscaled_ref_map <- rast(first_downscaled_ref_map_path)
-levels(first_downscaled_ref_map)
-plot(first_downscaled_ref_map)
-# Check unique values
-unique_classes_first_downscaled <- unique(values(first_downscaled_ref_map))
-print(unique_classes_first_downscaled)
 
-# Compare with `match_LC_classes`
-print(colnames(match_LC_classes))
-setdiff(colnames(match_LC_classes), paste0("LC", unique_classes_first_downscaled))
+# Inspect
+print(levels(first_downscaled_ref_map))  # Confirm that LC16 and LC17 are present
+print(setdiff(colnames(match_LC_classes), paste0("LC", unique(values(first_downscaled_ref_map)))))  # Should return an empty set
+print(levels(angola_modis_raster))  # Confirm that LC16 and LC17 are present))
+
+
+
+
