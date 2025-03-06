@@ -2,7 +2,6 @@
 
 # Libraries needed
 library(terra)
-gdal(lib="")
 library(LandScaleR) # NB: You can install the development version from GitHub 
                     # using devtools::install_github(".../LandScaleR-dev.git")
                     # the complete code is available at line 37 in the `install_packages.R` script
@@ -86,7 +85,7 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 # Define paths to Angola rasters
 base_dir <- getwd()
 angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Angola_modis_ref_map_2.tif")
+                                      "by_country", "Angola_modis_ref_map_3.tif")
 angola_plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", 
                                      "SSP1_RCP26", "SSP1_RCP26_fraction", 
                                      "SSP1_RCP26_fraction_croped", 
@@ -160,7 +159,7 @@ match_LC_classes["Cropland", c("LC12", "LC14")] <- c(0.5, 0.5)           # Cropl
 match_LC_classes["Pasture", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC11", "LC16")] <- c(0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1)                                 # Pasture allocation
 match_LC_classes["TimberForest", c("LC1", "LC2", "LC4", "LC5", "LC6", "LC7", "LC8", "LC9")] <- c(0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1) # TimberForest allocations
 match_LC_classes["UnmanagedForest", c("LC1", "LC2", "LC4", "LC5", "LC6")] <- c(0.1, 0.2, 0.3, 0.2,0.2) # UnmanagedForest allocations
-match_LC_classes["OtherNatural", c("LC12", "LC14")] <- c(0.5, 0.5)       # OtherNatural allocations
+match_LC_classes["OtherNatural", c("LC12", "LC14", "LC17")] <- c(0.5, 0.2, 0.3)       # OtherNatural allocations
 match_LC_classes["Barren", c("LC6", "LC7", "LC8", "LC9", "LC10", "LC16")] <- c(0.1, 0.1, 0.1, 0.2, 0.1, 0.4)                                  # Barren allocation
 match_LC_classes["Urban", "LC13"] <- 1                                  # Urban allocation
 
@@ -328,7 +327,7 @@ downscaleLC_with_progress(
 # Load first downscaled reference map
 first_downscaled_ref_map_path <- file.path(
   base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m",
-  "downscale_SSP1_RCP26", "Downscale_by_country", "Angola_scr_5",
+  "downscale_SSP1_RCP26", "Downscale_by_country", "Angola",
   "Angola_MODIS_PLUM_500m_s1_2021_2022_Discrete_Time1.tif"
 )
 
@@ -336,6 +335,7 @@ first_downscaled_ref_map <- rast(first_downscaled_ref_map_path)
 
 # Inspect
 print(levels(first_downscaled_ref_map))  # Confirm that LC16 and LC17 are present
+unique(values(first_downscaled_ref_map))  # Confirm that the unique values are as expected
 print(setdiff(colnames(match_LC_classes), paste0("LC", unique(values(first_downscaled_ref_map)))))  # Should return an empty set
 print(levels(angola_modis_raster))  # Confirm that LC16 and LC17 are present))
 
