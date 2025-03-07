@@ -1,6 +1,9 @@
 # Author: Markus Shiweda
 # Co-Authors: Tamsin Woodman, Reinhard Prestele
 
+# Update Terra package earlier 
+# install.packages("terra")
+
 # Function to install and load packages
 install_if_needed <- function(pkg) {
   if (!require(pkg, character.only = TRUE)) {
@@ -32,15 +35,15 @@ install_if_needed('Rcpp')
 
 
 # Update terra package
-# install.packages("terra")
+
 
 # Set the GitHub PAT for authentication
-# Sys.setenv(GITHUB_PAT = "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")
+Sys.setenv(GITHUB_PAT = "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")
 
 # # Install -dev version of LandScaleR from GitHub
 #
 #
-devtools::install_github("TamsinWoodman/LandScaleR-dev", ref = "dev", build_vignettes = TRUE)
+devtools::install_github("TamsinWoodman/LandScaleR-dev", ref = "dev", build_vignettes = TRUE, force = TRUE)
 library(LandScaleR)
 # Confirm if dev version is the one installed
 packageDescription("LandScaleR")
