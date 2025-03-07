@@ -15,7 +15,7 @@ angola_modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_
 angola_modis_raster <- rast(angola_modis_raster_path)
 
 # Optional: Inspect the original raster
-plot(angola_modis_raster, main = "Original MODIS Reference Map")
+# plot(angola_modis_raster, main = "Original MODIS Reference Map")
 print(unique(angola_modis_raster))
 print(names(angola_modis_raster))
 print(levels(angola_modis_raster))
@@ -62,8 +62,8 @@ print(unique(values(angola_modis_raster_new)))
 
 # Save the new MODIS reference map as version 6 (with levels already named LC1 - LC15)
 output_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country", "Angola_modis_ref_map_7.tif")
-writeRaster(angola_modis_raster_new, output_path, overwrite = TRUE)
-cat("Angola_modis_ref_map_6.tif has been saved with updated LC-level names.\n")
+# writeRaster(angola_modis_raster_new, output_path, overwrite = TRUE)
+# cat("Angola_modis_ref_map_6.tif has been saved with updated LC-level names.\n")
 
 
 # -----------------------------------------------------------------------------
@@ -74,7 +74,7 @@ cat("Angola_modis_ref_map_6.tif has been saved with updated LC-level names.\n")
 country_ref_map_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m",
                                   "by_country", "Angola_modis_ref_map_7.tif")
 ref_raster <- rast(country_ref_map_file)
-plot(ref_raster, main = "Angola MODIS Ref Map (Version 7)")
+# plot(ref_raster, main = "Angola MODIS Ref Map (Version 7)")
 
 # Extract the reference map levels (which should be like "LC1", "LC2", ..., "LC15")
 ref_levels <- levels(ref_raster)[[1]]
@@ -168,7 +168,7 @@ if (!dir.exists(downscale_output_dir)) {
 }
 
 # -----------------------------------------------------------------------------
-# Define the Dynamic Downscaling Function (with Logging and RAM Monitoring)
+# Downscaling process memory monitoring, time and file tracking
 downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
   start_time <- Sys.time()
   cat(sprintf("Starting downscaling process at: %s\n", start_time))
@@ -176,18 +176,19 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   log_file <- file.path(base_dir, "downscaling_log.txt")
   cat(sprintf("Processing started at: %s\n", start_time), file = log_file, append = TRUE)
   
+  # Make sure the initial reference map exists
   if (!file.exists(ref_map_file_name)) {
     stop("ERROR: MODIS reference map not found!")
   }
   
-  # Use the MODIS reference map as the first reference
-  current_ref_map <- ref_map_file_name  
+  current_ref_map <- ref_map_file_name
   
   for (i in seq_along(LC_deltas_file_list)) {
     file <- LC_deltas_file_list[i]
     years <- gsub(".*_(\\d{4}_\\d{4})\\.tif$", "\\1", file)
     
-    log_message <- sprintf("[%d/%d] Processing %s at %s", i, length(LC_deltas_file_list), file, Sys.time())
+    log_message <- sprintf("[%d/%d] Processing %s at %s", 
+                           i, length(LC_deltas_file_list), file, Sys.time())
     cat(log_message, "\n")
     cat(log_message, "\n", file = log_file, append = TRUE)
     
@@ -202,19 +203,23 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     
     process_start <- Sys.time()
     
-    output_file <- file.path(downscale_output_dir, paste0("Downscaled_ref_map_", years, ".tif"))
+    # Downscaled continuous map (if relevant)
+    output_file <- file.path(
+      downscale_output_dir, 
+      paste0("Downscaled_ref_map_", years, ".tif")
+    )
     
-    if (i == 1) {
-      discrete_output_file <- file.path(downscale_output_dir, paste0("Angola_MODIS_PLUM_500m_s1_", years, "_Discrete_Time1.tif"))
-    } else {
-      prev_years <- gsub(".*_(\\d{4}_\\d{4})\\.tif$", "\\1", LC_deltas_file_list[i - 1])
-      discrete_output_file <- file.path(downscale_output_dir, paste0("Angola_MODIS_PLUM_500m_s1_", prev_years, "_Discrete_Time", i - 1, ".tif"))
-    }
+    # Discrete map for this iteration: now includes the iteration index `i`
+    discrete_output_file <- file.path(
+      downscale_output_dir, 
+      paste0("Angola_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", i, ".tif")
+    )
     
+    # Call downscaleLC
     downscaleLC(
-      ref_map_file_name = current_ref_map,
-      LC_deltas_file_list = list(file),
-      output_file_prefix = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),
+      ref_map_file_name     = current_ref_map,
+      LC_deltas_file_list   = list(file),
+      output_file_prefix    = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),
       ...
     )
     
@@ -224,15 +229,22 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     ram_after <- sum(gc()[, 2])
     cat(sprintf("RAM Usage After Processing: %.2f MB\n", ram_after))
     
+    # Update current_ref_map if the new discrete file was written successfully
     if (file.exists(discrete_output_file)) {
       current_ref_map <- discrete_output_file
     } else {
-      warning(sprintf("WARNING: Expected reference map not found: %s. Using last available map instead.", discrete_output_file))
-      cat(sprintf("WARNING: Missing next reference map: %s\n", discrete_output_file), file = log_file, append = TRUE)
+      warning(sprintf(
+        "WARNING: Expected reference map not found: %s. Using last available map instead.", 
+        discrete_output_file
+      ))
+      cat(sprintf("WARNING: Missing next reference map: %s\n", discrete_output_file), 
+          file = log_file, append = TRUE)
     }
     
-    log_message <- sprintf("Completed %s in %.2f seconds | RAM Before: %.2f MB | RAM After: %.2f MB", 
-                           file, time_taken, ram_before, ram_after)
+    log_message <- sprintf(
+      "Completed %s in %.2f seconds | RAM Before: %.2f MB | RAM After: %.2f MB",
+      file, time_taken, ram_before, ram_after
+    )
     cat(log_message, "\n")
     cat(log_message, "\n", file = log_file, append = TRUE)
   }
@@ -240,23 +252,51 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   end_time <- Sys.time()
   total_time <- as.numeric(difftime(end_time, start_time, units = "mins"))
   cat(sprintf("Downscaling completed in %.2f minutes\n", total_time))
-  cat(sprintf("Downscaling completed at: %s (Total: %.2f mins)\n", end_time, total_time), file = log_file, append = TRUE)
+  cat(sprintf("Downscaling completed at: %s (Total: %.2f mins)\n", 
+              end_time, total_time), file = log_file, append = TRUE)
 }
 
-# -----------------------------------------------------------------------------
-# Run the Downscaling Function with the New Reference Map and Matching Matrix
-downscaleLC_with_progress(
-  ref_map_file_name = country_ref_map_file,
-  LC_deltas_file_list = country_LUC_map_files,
-  LC_deltas_type = "proportions",
-  ref_map_type = "discrete",
-  cell_size_unit = "m",
-  assign_ref_cells = FALSE,
-  match_LC_classes = match_LC_classes,
-  kernel_radius = 1,
-  simulation_type = "deterministic",
-  discrete_output_map = TRUE,
-  random_seed = 44,
-  output_dir_path = downscale_output_dir
-)
 
+# -----------------------------------------------------------------------------
+# Run the Downscaling Function with Memory Profiling Using profmem
+
+# Load the profmem package (install if necessary)
+if (!require(profmem)) install.packages("profmem")
+library(profmem)
+
+prof <- profmem({
+  downscaleLC_with_progress(
+    ref_map_file_name = country_ref_map_file,
+    LC_deltas_file_list = country_LUC_map_files,
+    LC_deltas_type = "proportions",
+    ref_map_type = "discrete",
+    cell_size_unit = "m",
+    assign_ref_cells = FALSE,
+    match_LC_classes = match_LC_classes,
+    kernel_radius = 1,
+    simulation_type = "deterministic",
+    discrete_output_map = TRUE,
+    random_seed = 44,
+    output_dir_path = downscale_output_dir
+  )
+})
+
+print(summary(prof))
+
+# -----------------------------------------------------------------------------
+
+# # Load first downscaled reference map
+# first_downscaled_ref_map_path <- file.path(
+#   base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m",
+#   "downscale_SSP1_RCP26", "Downscale_by_country", "Angola_scr_6",
+#   "Angola_MODIS_PLUM_500m_s1_2021_2022_Discrete_Time1.tif"
+# )
+# 
+# first_downscaled_ref_map <- rast(first_downscaled_ref_map_path)
+# 
+# # Inspect
+# print(levels(first_downscaled_ref_map))  # Confirm that LC16 and LC17 are present
+# unique(values(first_downscaled_ref_map))  # Confirm that the unique values are as expected
+# print(setdiff(colnames(match_LC_classes), paste0("LC", unique(values(first_downscaled_ref_map)))))  # Should return an empty set
+# print(levels(angola_modis_raster))  # Confirm that LC16 and LC17 are present))
+# 
