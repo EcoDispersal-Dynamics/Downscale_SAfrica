@@ -19,12 +19,16 @@ plot(angola_modis_raster, main = "Original MODIS Reference Map")
 print(unique(angola_modis_raster))
 print(names(angola_modis_raster))
 print(levels(angola_modis_raster))
+print(unique(levels(angola_modis_raster)))
+unique(values(angola_modis_raster))
+
 
 # --- Update Levels ---
 # Extract the original levels (attribute table)
 orig_levels <- levels(angola_modis_raster)[[1]]
 print("Original Levels:")
 print(orig_levels)
+
 
 # Remove rows with value 3 (Deciduous_Needleleaf_Forests) and value 15 (Snow_and_Ice)
 new_levels <- orig_levels[ !orig_levels$value %in% c(3, 15), ]
@@ -56,7 +60,8 @@ plot(angola_modis_raster_new, main = "Angola MODIS Reclassified")
 print("New Levels in Reclassified Raster:")
 print(levels(angola_modis_raster_new))
 print("Unique values in the reclassified raster:")
-print(unique(values(angola_modis_raster_new)))
+print(unique(levels(angola_modis_raster_new)))
+unique(values(angola_modis_raster_new))
 
 # Save the new MODIS reference map as version 6
 output_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country", "Angola_modis_ref_map_6.tif")
@@ -66,60 +71,60 @@ cat("Angola_modis_ref_map_6.tif has been saved with updated levels and reclassif
 # -----------------------------------------------------------------------------
 # PART 2: SETUP FOR DOWNSCALING WITH THE NEW REFERENCE MAP
 
-# Load the new MODIS reference map (version 6)
+# Load MODIS reference map (version 6)
 country_ref_map_file <- output_path
 ref_raster <- rast(country_ref_map_file)
+plot(ref_raster, main = "Angola MODIS Ref Map (Version 6)")
 
-# <<< CRITICAL LINE: Remove any NaN level from the reference map >>>
-levels(ref_raster) <- list(levels(ref_raster)[[1]][!is.nan(levels(ref_raster)[[1]]$value), ])
+# Extract unique MODIS class values, sort them, and remove NA values
+modis_classes <- sort(na.omit(unique(values(ref_raster))))
+cat("MODIS unique classes (new reclassified values):\n", modis_classes, "\n")
 
-# Load a representative PLUM raster (to extract its layer names)
-plum_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26",
-                              "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped",
-                              "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+# Load a representative PLUM raster to extract its layer names
+plum_raster_path <- file.path(
+  base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26",
+  "SSP1_RCP26_fraction", "SSP1_RCP26_fraction_croped",
+  "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif"
+)
 angola_plum_raster <- rast(plum_raster_path)
 plum_layer_names <- names(angola_plum_raster)
-cat("PLUM layer names:\n")
-print(plum_layer_names)
+cat("PLUM layer names:\n", plum_layer_names, "\n")
 
-# Extract unique MODIS class values from the new reference map
-modis_classes <- unique(values(ref_raster))
-modis_classes <- sort(modis_classes[!is.na(modis_classes)])
-cat("MODIS unique classes (new reclassified values):\n")
-print(modis_classes)
-# Expected classes: 1 to 15
-
-# Create the matching matrix: rows = PLUM layer names, columns = "LC" concatenated with modis_classes
+# Initialize the matching matrix: Rows = PLUM layers, Columns = MODIS classes
 match_LC_classes <- matrix(
-  data = 0,
-  nrow = length(plum_layer_names),
-  ncol = length(modis_classes),
+  0, 
+  nrow = length(plum_layer_names), 
+  ncol = length(modis_classes), 
   dimnames = list(plum_layer_names, paste0("LC", modis_classes))
 )
 cat("Initial Matching Matrix Structure:\n")
 print(match_LC_classes)
 
-# --- INSPECTION ---
-# Compare matching matrix column names with LC codes in the new reference map
-ref_map_codes <- paste0("LC", sort(unique(values(ref_raster))[!is.na(unique(values(ref_raster)))])
-)
-cat("LC codes in the new reference map:\n")
-print(ref_map_codes)
+# Verify that MODIS classes align with the matching matrix column names
+ref_map_codes <- paste0("LC", modis_classes)
 matrix_codes <- colnames(match_LC_classes)
-cat("Column names in match_LC_classes matrix:\n")
-print(matrix_codes)
 missing_codes <- setdiff(matrix_codes, ref_map_codes)
-cat("The following LC codes are in match_LC_classes but missing in the reference map:\n")
-print(missing_codes)
 
-# --- Populate the Matching Matrix with Preferred Allocations ---
-match_LC_classes["Cropland", c("LC11", "LC13")] <- c(0.5, 0.5)
-match_LC_classes["Pasture", c("LC5", "LC6", "LC7", "LC8", "LC9", "LC10", "LC14")] <- c(0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.1)
-match_LC_classes["TimberForest", c("LC1", "LC2", "LC3", "LC4", "LC5", "LC6", "LC7", "LC8")] <- c(0.1, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1)
-match_LC_classes["UnmanagedForest", c("LC1", "LC2", "LC3", "LC4", "LC5")] <- c(0.1, 0.2, 0.3, 0.2, 0.2)
-match_LC_classes["OtherNatural", c("LC11", "LC13", "LC15")] <- c(0.5, 0.2, 0.3)
-match_LC_classes["Barren", c("LC5", "LC6", "LC7", "LC8", "LC9", "LC14")] <- c(0.1, 0.1, 0.1, 0.2, 0.1, 0.4)
-match_LC_classes["Urban", "LC12"] <- 1
+if (length(missing_codes) > 0) {
+  cat("The following LC codes are in match_LC_classes but missing in the reference map:\n", missing_codes, "\n")
+}
+
+# --- Populate Matching Matrix ---
+allocations <- list(
+  Cropland = c("LC11" = 0.5, "LC13" = 0.5),
+  Pasture = c("LC5" = 0.1, "LC6" = 0.2, "LC7" = 0.1, "LC8" = 0.2, "LC9" = 0.2, "LC10" = 0.1, "LC14" = 0.1),
+  TimberForest = c("LC1" = 0.1, "LC2" = 0.2, "LC3" = 0.2, "LC4" = 0.1, "LC5" = 0.1, "LC6" = 0.1, "LC7" = 0.1, "LC8" = 0.1),
+  UnmanagedForest = c("LC1" = 0.1, "LC2" = 0.2, "LC3" = 0.3, "LC4" = 0.2, "LC5" = 0.2),
+  OtherNatural = c("LC11" = 0.5, "LC13" = 0.2, "LC15" = 0.3),
+  Barren = c("LC5" = 0.1, "LC6" = 0.1, "LC7" = 0.1, "LC8" = 0.2, "LC9" = 0.1, "LC14" = 0.4),
+  Urban = c("LC12" = 1)
+)
+
+# Apply allocations to the matrix
+for (category in names(allocations)) {
+  match_LC_classes[category, names(allocations[[category]])] <- allocations[[category]]
+}
+
 cat("Updated Matching Matrix with Allocations:\n")
 print(match_LC_classes)
 
