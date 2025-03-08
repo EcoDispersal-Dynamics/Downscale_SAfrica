@@ -2,7 +2,6 @@
 
 # Libraries needed
 library(terra)
-gdal(lib="")
 library(LandScaleR) # NB: You can install the development version from GitHub 
                     # using devtools::install_github(".../LandScaleR-dev.git")
                     # the complete code is available at line 37 in the `install_packages.R` script
@@ -15,58 +14,79 @@ library(LandScaleR) # NB: You can install the development version from GitHub
 # using the MODIS raster as the reference raster for the area extent 
 
 
-
 # Base directory and paths
 base_dir <- getwd()
-# shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
-# modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
-# modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
-# plum_rasters_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction")
-# plum_output_dir <- file.path(plum_rasters_dir, "SSP1_RCP26_fraction_croped")
-# 
-# # # Ensure output directories exist
-# # dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
-# # dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
-# 
-# # Load region/countries shapefile and MODIS raster
-# regions <- vect(shapefile_path)
-# modis_raster <- rast(modis_raster_path)
-# 
-# # Reproject shapefile and MODIS raster to UTM zone 33 since I am testing with Angola
-# utm_crs <- "EPSG:32633"  # UTM zone 33
-# regions_utm <- project(regions, utm_crs)
-# modis_raster_utm <- project(modis_raster, utm_crs)
-# 
-# # List all original PLUM raster files for the SSP1_RCP26 scenario
-# # that need to be cropped and projected to match the Angola MODIS raster
-# plum_raster_files <- list.files(plum_rasters_dir, pattern = "SSP1_RCP26_LUC_fractions_.*\\.tif$", full.names = TRUE)
-# 
-# # Uncomment the function if needs to process the data
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
+modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
+plum_rasters_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction")
+plum_output_dir <- file.path(plum_rasters_dir, "SSP1_RCP26_fraction_croped")
 
-# # Crop and save rasters for each country
-# for (country in unique(regions_utm$CNTRY_NAME)) {
-#   # Get the polygon for the current country
-#   country_polygon <- regions_utm[regions_utm$CNTRY_NAME == country, ]
-#   
-#   # Crop and save the MODIS raster
-#   modis_cropped <- crop(modis_raster_utm, country_polygon)
-#   modis_masked <- mask(modis_cropped, country_polygon)
-#   modis_output_path <- file.path(modis_output_dir, paste0(country, "_modis_ref_map_2.tif"))
-#   writeRaster(modis_masked, modis_output_path, overwrite = TRUE)
-#   
-#   # Crop and save PLUM rasters
-#   for (plum_raster_path in plum_raster_files) {
-#     plum_raster <- rast(plum_raster_path)
-#     plum_raster_utm <- project(plum_raster, utm_crs)  # Reproject PLUM raster to UTM zone 33
-#     plum_cropped <- crop(plum_raster_utm, country_polygon)
-#     plum_masked <- mask(plum_cropped, country_polygon)
-#     
-#     # Create the output filename
-#     plum_raster_name <- basename(plum_raster_path)
-#     plum_output_path <- file.path(plum_output_dir, paste0(country, "_", plum_raster_name))
-#     writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
-#   }
-# }
+# Ensure output directories exist
+dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
+
+# Load region/countries shapefile and MODIS raster
+regions <- vect(shapefile_path)
+modis_raster <- rast(modis_raster_path)
+
+# Function to determine UTM zone based on longitude
+get_utm_crs <- function(longitude, is_southern = FALSE) {
+  zone <- floor((longitude + 180) / 6) + 1  # Calculate UTM zone
+  epsg <- ifelse(is_southern, 32700 + zone, 32600 + zone)  # EPSG code: 326XX (N), 327XX (S)
+  return(paste0("EPSG:", epsg))
+}
+
+# List all original PLUM raster files for the SSP1_RCP26 scenario
+plum_raster_files <- list.files(plum_rasters_dir, pattern = "SSP1_RCP26_LUC_fractions_.*\\.tif$", full.names = TRUE)
+
+# Crop and save rasters for each country
+for (country in unique(regions$CNTRY_NAME)) {
+  # Get the polygon for the current country
+  country_polygon <- regions[regions$CNTRY_NAME == country, ]
+  
+  # Compute the centroid longitude to determine UTM zone
+  centroid <- crds(centroids(country_polygon))
+  longitude <- centroid[1]  # Extract longitude
+  
+  # Check if country is in the southern hemisphere (latitude < 0)
+  latitude <- centroid[2]
+  is_southern <- latitude < 0
+  
+  # Get correct UTM projection
+  utm_crs <- get_utm_crs(longitude, is_southern)
+  
+  # Reproject country's polygon to the correct UTM zone
+  country_polygon_utm <- project(country_polygon, utm_crs)
+  
+  # Reproject MODIS raster to the correct UTM zone
+  modis_raster_utm <- project(modis_raster, utm_crs)
+  
+  # Crop and save the MODIS raster
+  modis_cropped <- crop(modis_raster_utm, country_polygon_utm)
+  modis_masked <- mask(modis_cropped, country_polygon_utm)
+  modis_output_path <- file.path(modis_output_dir, paste0(country, "_modis_ref_map_2.tif"))
+  writeRaster(modis_masked, modis_output_path, overwrite = TRUE)
+  
+  # Process and save PLUM rasters for the current country
+  for (plum_raster_path in plum_raster_files) {
+    plum_raster <- rast(plum_raster_path)
+    
+    # Reproject PLUM raster to the correct UTM zone
+    plum_raster_utm <- project(plum_raster, utm_crs)
+    
+    # Crop and mask
+    plum_cropped <- crop(plum_raster_utm, country_polygon_utm)
+    plum_masked <- mask(plum_cropped, country_polygon_utm)
+    
+    # Create the output filename
+    plum_raster_name <- basename(plum_raster_path)
+    plum_output_path <- file.path(plum_output_dir, paste0(country, "_", plum_raster_name))
+    plum_output_path
+    writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
+  }
+}
+
 
 # End of cropping and re-projection script
 
@@ -86,7 +106,59 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 # Define paths to Angola rasters
 base_dir <- getwd()
 angola_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Angola_modis_ref_map_3.tif")
+                                      "by_country", "Angola_modis_ref_map_2.tif")
+
+
+Namibia_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Namibia_modis_ref_map_2.tif")
+
+Botswana_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Botswana_modis_ref_map_2.tif")
+
+Mauritius_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Mauritius_modis_ref_map_2.tif")
+
+
+# Create raster for both Angola and Namibia
+angola_modis_raster <- rast(angola_modis_raster)
+Namibia_modis_raster <- rast(Namibia_modis_raster)
+Botswana_modis_raster <- rast(Botswana_modis_raster)
+Mauritius_modis_raster <- rast(Mauritius_modis_raster)
+
+# Inspect the raster's projection and asigned Zones
+results <- list(
+  "Angola MODIS Raster" = angola_modis_raster,
+  "Namibia MODIS Raster" = Namibia_modis_raster,
+  "Botswana MODIS Raster" = Botswana_modis_raster,
+  "Mauritius MODIS Raster" = Mauritius_modis_raster
+)
+
+results
+
+# Inspect cropped and masked PLUM rasters
+
+Angola_plum_raster <- file.path(plum_output_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+Angola_plum_raster
+Namibia_plum_raster <- file.path(plum_output_dir, "Namibia_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+Botswana_plum_raster <- file.path(plum_output_dir, "Botswana_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+Mauritius_plum_raster <- file.path(plum_output_dir, "Mauritius_SSP1_RCP26_LUC_fractions_2021_2022.tif")
+
+# Create raster for these countries
+Angola_plum_raster <- rast(Angola_plum_raster)
+Namibia_plum_raster <- rast(Namibia_plum_raster)
+Botswana_plum_raster <- rast(Botswana_plum_raster)
+Mauritius_plum_raster <- rast(Mauritius_plum_raster)
+
+# Inspect the raster's projection and asigned Zones
+plum.results <- list(
+  "Angola PLUM Raster" = Angola_plum_raster,
+  "Namibia PLUM Raster" = Namibia_plum_raster,
+  "Botswana PLUM Raster" = Botswana_plum_raster,
+  "Mauritius PLUM Raster" = Mauritius_plum_raster
+)
+plum.results
+
+
 angola_plum_raster <- file.path(base_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022_3.tif")
 
 # Load rasters
