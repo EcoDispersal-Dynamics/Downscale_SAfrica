@@ -168,7 +168,8 @@ if (!dir.exists(downscale_output_dir)) {
 }
 
 # -----------------------------------------------------------------------------
-# Downscaling process memory monitoring, time and file tracking
+# Example: Minimal Fix for Iteration-Based Filenames
+
 downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
   start_time <- Sys.time()
   cat(sprintf("Starting downscaling process at: %s\n", start_time))
@@ -176,7 +177,6 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   log_file <- file.path(base_dir, "downscaling_log.txt")
   cat(sprintf("Processing started at: %s\n", start_time), file = log_file, append = TRUE)
   
-  # Make sure the initial reference map exists
   if (!file.exists(ref_map_file_name)) {
     stop("ERROR: MODIS reference map not found!")
   }
@@ -203,23 +203,26 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     
     process_start <- Sys.time()
     
-    # Downscaled continuous map (if relevant)
+    # Continuous downscaled map (if relevant)
     output_file <- file.path(
       downscale_output_dir, 
       paste0("Downscaled_ref_map_", years, ".tif")
     )
     
-    # Discrete map for this iteration: now includes the iteration index `i`
+    # ----------------------------------------------------------------
+    # REMOVE the if() statement and ALWAYS name the file with the
+    # current iteration index 'i' in the suffix:
+    # ----------------------------------------------------------------
     discrete_output_file <- file.path(
       downscale_output_dir, 
       paste0("Angola_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", i, ".tif")
     )
     
-    # Call downscaleLC
+    # Call the downscaleLC function
     downscaleLC(
-      ref_map_file_name     = current_ref_map,
-      LC_deltas_file_list   = list(file),
-      output_file_prefix    = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),
+      ref_map_file_name   = current_ref_map,
+      LC_deltas_file_list = list(file),
+      output_file_prefix  = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),
       ...
     )
     
@@ -229,7 +232,7 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     ram_after <- sum(gc()[, 2])
     cat(sprintf("RAM Usage After Processing: %.2f MB\n", ram_after))
     
-    # Update current_ref_map if the new discrete file was written successfully
+    # Update the reference map if the new discrete file was written successfully
     if (file.exists(discrete_output_file)) {
       current_ref_map <- discrete_output_file
     } else {
@@ -255,7 +258,6 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   cat(sprintf("Downscaling completed at: %s (Total: %.2f mins)\n", 
               end_time, total_time), file = log_file, append = TRUE)
 }
-
 
 # -----------------------------------------------------------------------------
 # Run the Downscaling Function with Memory Profiling Using profmem
