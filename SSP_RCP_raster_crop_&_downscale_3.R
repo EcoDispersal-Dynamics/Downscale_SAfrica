@@ -90,6 +90,65 @@ for (country in unique(regions$CNTRY_NAME)) {
 
 # End of cropping and re-projection script
 
+#--------------------------------------------------------------------------------
+
+# Reclassifying modis reference maps for each country
+# Define the path to the reference data set
+modis_ref_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
+
+# List all countries (assuming each country has a folder or a file in the directory)
+country_files <- list.files(modis_ref_dir, pattern = "_modis_ref_map_2\\.tif$", full.names = TRUE)
+
+# Process each country's MODIS reference map
+for (country_path in country_files) {
+  # Extract country name from the file path
+  country_name <- gsub("_modis_ref_map_2\\.tif$", "", basename(country_path))
+  cat(sprintf("Processing: %s\n", country_name))
+  
+  # Load the MODIS raster for the country
+  modis_raster <- rast(country_path)
+  
+  # Extract original levels
+  orig_levels <- levels(modis_raster)[[1]]
+  cat("Original Levels:\n")
+  print(orig_levels)
+  
+  # Remove rows with value 3 (Deciduous_Needleleaf_Forests) and value 15 (Snow_and_Ice)
+  new_levels <- orig_levels[ !orig_levels$value %in% c(3, 15), ]
+  
+  # Reassign new sequential values (new_value from 1 to nrow(new_levels))
+  new_levels$new_value <- seq_len(nrow(new_levels))
+  
+  # Rename classes: assign new names as "LC1", "LC2", ..., "LC15"
+  new_levels$name <- paste0("LC", new_levels$new_value)
+  cat("Updated Levels for", country_name, ":\n")
+  print(new_levels)
+  
+  # Create Reclassification Matrix
+  reclass_mat <- matrix(nrow = nrow(new_levels), ncol = 3)
+  for(i in seq_len(nrow(new_levels))){
+    old_val <- new_levels$value[i]
+    new_val <- new_levels$new_value[i]
+    reclass_mat[i, ] <- c(old_val - 0.5, old_val + 0.5, new_val)
+  }
+  cat("Reclassification Matrix for", country_name, ":\n")
+  print(reclass_mat)
+  
+  # Reclassify the raster
+  modis_raster_new <- classify(modis_raster, rcl = reclass_mat, include.lowest = TRUE)
+  
+  # Update levels with new LC names
+  levels(modis_raster_new) <- list(new_levels[, c("new_value", "name")])
+  cat("New Levels in Reclassified Raster for", country_name, ":\n")
+  print(levels(modis_raster_new))
+  
+  # Save the reclassified MODIS reference map
+  output_path <- file.path(modis_ref_dir, paste0(country_name, "_modis_ref_map_7.tif"))
+  writeRaster(modis_raster_new, output_path, overwrite = TRUE)
+  cat(sprintf("Saved reclassified map for %s: %s\n", country_name, output_path))
+}
+
+cat("All countries' MODIS reference maps have been successfully reclassified and saved.\n")
 
 
 
