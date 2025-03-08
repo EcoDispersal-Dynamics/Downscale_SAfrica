@@ -162,7 +162,7 @@ if (length(country_LUC_map_files) == 0) {
   stop("ERROR: No PLUM transition maps found in: ", plum_raster_dir)
 }
 downscale_output_dir <- file.path(base_dir, "LU_downscalled_dataset", "LU_PLUM_Modis_500m",
-                                  "downscale_SSP1_RCP26", "Downscale_by_country", "Angola_scr_6")
+                                  "downscale_SSP1_RCP26", "Downscale_by_country", "Angola", "Angola_script_7")
 if (!dir.exists(downscale_output_dir)) {
   dir.create(downscale_output_dir, recursive = TRUE)
 }
