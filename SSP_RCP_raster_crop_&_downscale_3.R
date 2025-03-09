@@ -66,7 +66,7 @@ for (country in unique(regions$CNTRY_NAME)) {
   modis_cropped <- crop(modis_raster_utm, country_polygon_utm)
   modis_masked <- mask(modis_cropped, country_polygon_utm)
   modis_output_path <- file.path(modis_output_dir, paste0(country, "_modis_ref_map_2.tif"))
-  writeRaster(modis_masked, modis_output_path, overwrite = TRUE)
+  # writeRaster(modis_masked, modis_output_path, overwrite = TRUE)
   
   # Process and save PLUM rasters for the current country
   for (plum_raster_path in plum_raster_files) {
@@ -83,7 +83,7 @@ for (country in unique(regions$CNTRY_NAME)) {
     plum_raster_name <- basename(plum_raster_path)
     plum_output_path <- file.path(plum_output_dir, paste0(country, "_", plum_raster_name))
     plum_output_path
-    writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
+    # writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
   }
 }
 
@@ -92,43 +92,73 @@ for (country in unique(regions$CNTRY_NAME)) {
 
 #--------------------------------------------------------------------------------
 
+# Experiment 1
 # Reclassifying modis reference maps for each country
-# Define the path to the reference data set
+
+# Define the path to the reference dataset
 modis_ref_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
 
-# List all countries (assuming each country has a folder or a file in the directory)
+# List all countries (assuming each country has a file in the directory)
 country_files <- list.files(modis_ref_dir, pattern = "_modis_ref_map_2\\.tif$", full.names = TRUE)
+
+# Define a global MODIS class-to-LC mapping
+global_modis_mapping <- data.frame(
+  value = 1:17,  # All possible MODIS classes
+  name = c("LC1", "LC2", "LC3", "LC4", "LC5", "LC6", "LC7", "LC8", "LC9", 
+           "LC10", "LC11", "LC12", "LC13", "LC14", "LC15", "LC16", "LC17")  
+)
 
 # Process each country's MODIS reference map
 for (country_path in country_files) {
   # Extract country name from the file path
   country_name <- gsub("_modis_ref_map_2\\.tif$", "", basename(country_path))
-  cat(sprintf("Processing: %s\n", country_name))
+  cat(sprintf("\nProcessing: %s\n", country_name))
   
   # Load the MODIS raster for the country
   modis_raster <- rast(country_path)
   
-  # Extract original levels
+  # Extract original levels (full attribute table with all 17 MODIS classes)
   orig_levels <- levels(modis_raster)[[1]]
-  cat("Original Levels:\n")
+  if (is.null(orig_levels)) {
+    warning(sprintf("No category levels found for %s. Skipping...", country_name))
+    next
+  }
+  
+  cat("Original Levels from Attribute Table:\n")
   print(orig_levels)
   
-  # Remove rows with value 3 (Deciduous_Needleleaf_Forests) and value 15 (Snow_and_Ice)
-  new_levels <- orig_levels[ !orig_levels$value %in% c(3, 15), ]
+  # Extract unique values actually present in the raster
+  existing_classes <- unique(values(modis_raster))
+  existing_classes <- existing_classes[!is.na(existing_classes)]  # Remove NA values
   
-  # Reassign new sequential values (new_value from 1 to nrow(new_levels))
-  new_levels$new_value <- seq_len(nrow(new_levels))
+  cat("Classes Present in Raster:\n")
+  print(existing_classes)
   
-  # Rename classes: assign new names as "LC1", "LC2", ..., "LC15"
-  new_levels$name <- paste0("LC", new_levels$new_value)
+  # Identify missing classes (those in levels() but not in unique(values()))
+  missing_classes <- setdiff(orig_levels$value, existing_classes)
+  
+  cat("Classes Missing in Raster:\n")
+  print(missing_classes)
+  
+  # Remove missing classes from the attribute table
+  new_levels <- orig_levels[!orig_levels$value %in% missing_classes, ]
+  
+  # **Manually assign LC names using global mapping**
+  new_levels$name <- global_modis_mapping$name[match(new_levels$value, global_modis_mapping$value)]
+  
+  # Check if the "name" column exists, stop if missing
+  if (!"name" %in% colnames(new_levels) || any(is.na(new_levels$name))) {
+    stop(sprintf("Error: 'name' column missing after assigning class names for %s", country_name))
+  }
+  
   cat("Updated Levels for", country_name, ":\n")
   print(new_levels)
   
-  # Create Reclassification Matrix
+  # Create a reclassification matrix based on available values
   reclass_mat <- matrix(nrow = nrow(new_levels), ncol = 3)
-  for(i in seq_len(nrow(new_levels))){
+  for (i in seq_len(nrow(new_levels))) {
     old_val <- new_levels$value[i]
-    new_val <- new_levels$new_value[i]
+    new_val <- i  # Ensures sequential values (1,2,3,...) for downscaleLC
     reclass_mat[i, ] <- c(old_val - 0.5, old_val + 0.5, new_val)
   }
   cat("Reclassification Matrix for", country_name, ":\n")
@@ -137,22 +167,25 @@ for (country_path in country_files) {
   # Reclassify the raster
   modis_raster_new <- classify(modis_raster, rcl = reclass_mat, include.lowest = TRUE)
   
-  # Update levels with new LC names
+  # Update levels with consistent LC names
+  new_levels$new_value <- seq_len(nrow(new_levels))  # Assign sequential numbers
   levels(modis_raster_new) <- list(new_levels[, c("new_value", "name")])
+  
   cat("New Levels in Reclassified Raster for", country_name, ":\n")
   print(levels(modis_raster_new))
   
-  # Save the reclassified MODIS reference map
-  output_path <- file.path(modis_ref_dir, paste0(country_name, "_modis_ref_map_7.tif"))
+  # Save the reclassified MODIS reference map (now as `_modis_ref_map_8.tif`)
+  output_path <- file.path(modis_ref_dir, paste0(country_name, "_modis_ref_map_8.tif"))
   writeRaster(modis_raster_new, output_path, overwrite = TRUE)
-  cat(sprintf("Saved reclassified map for %s: %s\n", country_name, output_path))
+  cat(sprintf("✅ Saved reclassified map for %s: %s\n", country_name, output_path))
 }
 
-cat("All countries' MODIS reference maps have been successfully reclassified and saved.\n")
+cat("\n✅ All countries' MODIS reference maps have been successfully reclassified and saved.\n")
 
 
 
 #--------------------------------------------------------------------------------
+
 
 # Inspected the rasters to ensure they are correctly cropped and masked
 # And that the extents, resolutions, and coordinate reference systems match
@@ -178,13 +211,22 @@ Mauritius_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_50
                                       "by_country", "Mauritius_modis_ref_map_2.tif")
 
 
-# Create raster for both Angola and Namibia
+# Create raster for random countries for inspection
 angola_modis_raster <- rast(angola_modis_raster)
 Namibia_modis_raster <- rast(Namibia_modis_raster)
 Botswana_modis_raster <- rast(Botswana_modis_raster)
 Mauritius_modis_raster <- rast(Mauritius_modis_raster)
 
-# Inspect the raster's projection and asigned Zones
+summary(angola_modis_raster)
+summary(Namibia_modis_raster)
+summary(Botswana_modis_raster)
+summary(Mauritius_modis_raster)
+unique(angola_modis_raster)
+unique(levels(angola_modis_raster))
+unique(Namibia_modis_raster)
+unique(values(Namibia_modis_raster))
+unique(Botswana_modis_raster)
+# Inspect the raster projection and assigned Zones
 results <- list(
   "Angola MODIS Raster" = angola_modis_raster,
   "Namibia MODIS Raster" = Namibia_modis_raster,
@@ -193,6 +235,46 @@ results <- list(
 )
 
 results
+
+
+# Inspect the reclassified MODIS rasters
+# Define paths to reclassified MODIS rasters
+Angola_modis_raster_reclass <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Angola_modis_ref_map_8.tif")
+Namibia_modis_raster_reclass <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
+                                      "by_country", "Namibia_modis_ref_map_8.tif")
+Botswana_modis_raster_reclass <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m",
+                                      "by_country", "Botswana_modis_ref_map_8.tif")
+Mauritius_modis_raster_reclass <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m",
+                                      "by_country", "Mauritius_modis_ref_map_8.tif")
+
+# Create raster for random countries for inspection
+Angola_modis_raster_reclass <- rast(Angola_modis_raster_reclass)
+Namibia_modis_raster_reclass <- rast(Namibia_modis_raster_reclass)
+Botswana_modis_raster_reclass <- rast(Botswana_modis_raster_reclass)
+Mauritius_modis_raster_reclass <- rast(Mauritius_modis_raster_reclass)
+
+unique(Angola_modis_raster_reclass)
+levels(Angola_modis_raster_reclass)
+unique(Namibia_modis_raster_reclass)
+levels(Namibia_modis_raster_reclass)
+unique(Botswana_modis_raster_reclass)
+levels(Botswana_modis_raster_reclass)
+unique(Mauritius_modis_raster_reclass)
+levels(Mauritius_modis_raster_reclass)
+unique(Mauritius_modis_raster_reclass)
+levels(Mauritius_modis_raster_reclass)
+
+
+# Inspect the reclassified raster classes and levels
+results_reclass <- list(
+  "Angola MODIS Raster Reclassified" = Angola_modis_raster_reclass,
+  "Namibia MODIS Raster Reclassified" = Namibia_modis_raster_reclass,
+  "Botswana MODIS Raster Reclassified" = Botswana_modis_raster_reclass,
+  "Mauritius MODIS Raster Reclassified" = Mauritius_modis_raster_reclass)
+
+results_reclass
+
 
 # Inspect cropped and masked PLUM rasters
 
@@ -218,39 +300,17 @@ plum.results <- list(
 plum.results
 
 
-angola_plum_raster <- file.path(base_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022_3.tif")
-
-# Load rasters
-#angola_modis_raster <- rast(angola_modis_raster_path)
-#unique(angola_modis_raster)
-
-#angola_plum_raster <- rast(angola_plum_raster_path)
-
-# Perform inspection
-#results <- list(
-#  "Head of Angola MODIS Raster" = head(values(angola_modis_raster)),
-#  "Head of Angola PLUM Raster" = head(values(angola_plum_raster)),
-#  "Unique Values in Angola MODIS Raster" = unique(values(angola_modis_raster)),
-#  "Unique Values in Angola PLUM Raster" = unique(values(angola_plum_raster)),
-#  "CRS Comparison" = list("MODIS CRS" = crs(angola_modis_raster), "PLUM CRS" = crs(angola_plum_raster)),
-#  "Extent Comparison" = list("MODIS Extent" = ext(angola_modis_raster), "PLUM Extent" = ext(angola_plum_raster)),
-#  "Resolution Comparison" = list("MODIS Resolution" = res(angola_modis_raster), "PLUM Resolution" = res(angola_plum_raster)),
-#  "Units Comparison" = list("MODIS Units" = crs(angola_modis_raster, describe = TRUE)$UNIT, 
-#                            "PLUM Units" = crs(angola_plum_raster, describe = TRUE)$UNIT),
-#  "Data Type Comparison" = list("MODIS Data Type" = datatype(angola_modis_raster), "PLUM Data Type" = datatype(angola_plum_raster)),
-#  "Layer Count" = list("MODIS Layer Count" = nlyr(angola_modis_raster), "PLUM Layer Count" = nlyr(angola_plum_raster)),
-#  "Summary Statistics" = list("MODIS Summary" = global(angola_modis_raster, fun = "mean", na.rm = TRUE),
-#                              "PLUM Summary" = global(angola_plum_raster, fun = "mean", na.rm = TRUE))
-#)
-
-# Print all inspection results
-#print(results)
-
 
 #-------------------------------------------------------------------------------
 #
 # Test the downscaling script on a single country (Angola)
 # 
+
+# Load rasters
+angola_plum_raster <- file.path(base_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022_3.tif")
+angola_modis_raster <- rast(angola_modis_raster_path)
+
+
 # Start bz generating a dznamic Transition Matrix
 #
 # Extract PLUM layer names for row names
