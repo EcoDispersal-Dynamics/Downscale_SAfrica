@@ -1,6 +1,6 @@
-# # Load libraries
-# library(terra)
-# library(LandScaleR)
+# Load libraries
+library(terra)
+library(LandScaleR)
 
 # -----------------------------------------------------------------------------
 # *Setup Directories & File Paths
@@ -89,6 +89,25 @@ if (length(country_LUC_map_files) == 0) {
 }
 
 # -----------------------------------------------------------------------------
+# 🏗️ **Function to Get the Latest Time Index**
+get_latest_time_index <- function(output_dir, country_name, years) {
+  file_pattern <- paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Time\\d+\\.tif$")
+  files <- list.files(output_dir, pattern = file_pattern, full.names = TRUE)
+  
+  if (length(files) == 0) {
+    return(0)  # ✅ No files yet, start from _Time1
+  }
+  
+  # Sort by modification time (newest last)
+  files <- files[order(file.info(files)$mtime, decreasing = TRUE)]
+  
+  # Extract numeric X from _TimeX.tif
+  time_numbers <- as.numeric(gsub(".*_Time(\\d+)\\.tif$", "\\1", files))
+  
+  return(max(time_numbers, na.rm = TRUE))  # ✅ Return latest X
+}
+
+# -----------------------------------------------------------------------------
 # 🏗️ **Downscaling Process with Reference Map Updates**
 downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
   start_time <- Sys.time()
@@ -97,29 +116,58 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   log_file <- file.path(base_dir, "downscaling_log.txt")
   cat(sprintf("Processing started at: %s\n", start_time), file = log_file, append = TRUE)
   
-  current_ref_map <- ref_map_file_name
+  current_ref_map <- ref_map_file_name  # ✅ Start with original ref map (character path)
   
   for (i in seq_along(LC_deltas_file_list)) {
     file <- LC_deltas_file_list[i]
     years <- gsub(".*_(\\d{4}_\\d{4})\\.tif$", "\\1", file)
     
-    cat(sprintf("📌 [%d/%d] Processing: %s at %s\n", i, length(LC_deltas_file_list), file, Sys.time()))
+    # ✅ Detect last generated _TimeX.tif
+    latest_time_index <- get_latest_time_index(downscale_output_dir, country_name, years)
+    next_time_index <- latest_time_index + 1  # ✅ Ensure correct next X
+    
+    cat(sprintf("📌 [%d/%d] Processing: %s at %s | Latest Time Index: %d\n", 
+                i, length(LC_deltas_file_list), file, Sys.time(), latest_time_index))
     
     if (!file.exists(file)) {
-      warning(sprintf("⚠️ WARNING: Missing transition map, skipping: %s\n", file))
-      next
+      stop(sprintf("❌ ERROR: Missing transition map: %s", file))
     }
     
     ram_before <- sum(gc()[, 2])
     
     # ✅ **Ensure match_LC_classes only contains valid classes**
-    valid_classes <- colnames(match_LC_classes) %in% levels(ref_map)[[1]]$name
+    valid_classes <- colnames(match_LC_classes) %in% levels(rast(current_ref_map))[[1]]$name
     match_LC_classes <- match_LC_classes[, valid_classes, drop = FALSE]
     
-    # 📌 **Define expected output filename**
+    # ✅ **Set correct ref_map from second iteration onward**
+    if (latest_time_index > 0) {  # ✅ Skip this for first iteration
+      previous_time_file <- file.path(
+        downscale_output_dir, 
+        paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Time", latest_time_index, ".tif")
+      )
+      previous_discrete_file <- file.path(
+        downscale_output_dir, 
+        paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", latest_time_index, ".tif")
+      )
+      
+      # ✅ Load the discrete file as the next reference map
+      if (file.exists(previous_discrete_file)) {
+        current_ref_map <- previous_discrete_file  # ✅ Keep as character path
+        cat(sprintf("✅ Using previous discrete map: %s\n", previous_discrete_file))
+      } else {
+        stop(sprintf("❌ ERROR: Expected discrete reference map not found: %s", previous_discrete_file))
+      }
+    }
+    
+    # ✅ **Set expected filename for next output**
+    time_output_file <- file.path(
+      downscale_output_dir, 
+      paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Time", next_time_index, ".tif")
+    )
+    
     discrete_output_file <- file.path(
       downscale_output_dir, 
-      paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", i, ".tif")
+      paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", next_time_index, ".tif")
     )
     
     # 🔥 **Run Downscaling**
@@ -130,12 +178,36 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
       ...
     )
     
+    # ✅ **Only Rename from the Third Iteration Onward**
+    if (latest_time_index > 1) {  # ✅ Skips renaming for first two iterations
+      Sys.sleep(1)  # Ensure file system updates before checking
+      previous_time_file <- file.path(
+        downscale_output_dir, 
+        paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Time", latest_time_index, ".tif")
+      )
+      previous_discrete_file <- file.path(
+        downscale_output_dir, 
+        paste0(country_name, "_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", latest_time_index, ".tif")
+      )
+      
+      # ✅ Rename both raster outputs
+      if (file.exists(previous_time_file)) {
+        file.rename(previous_time_file, time_output_file)
+        cat(sprintf("✅ Renamed %s → %s\n", previous_time_file, time_output_file))
+      }
+      
+      if (file.exists(previous_discrete_file)) {
+        file.rename(previous_discrete_file, discrete_output_file)
+        cat(sprintf("✅ Renamed %s → %s\n", previous_discrete_file, discrete_output_file))
+      }
+    }
+    
     # ✅ **Update Reference Map**
     if (file.exists(discrete_output_file)) {
       cat(sprintf("✅ Updating reference map for next iteration: %s\n", discrete_output_file))
-      current_ref_map <- discrete_output_file
+      current_ref_map <- discrete_output_file  # ✅ Keep as character path
     } else {
-      warning(sprintf("⚠️ WARNING: Expected reference map not found: %s. Using last available map.", discrete_output_file))
+      stop(sprintf("❌ ERROR: Expected discrete reference map not found: %s", discrete_output_file))
     }
   }
   
