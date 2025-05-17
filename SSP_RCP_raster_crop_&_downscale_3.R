@@ -14,13 +14,120 @@ library(LandScaleR) # NB: You can install the development version from GitHub
 # using the MODIS raster as the reference raster for the area extent 
 
 
+# ============================================================
+# Recreate Reclassified Country-Specific MODIS Rasters (UTM, Global LC Names)
+# ============================================================
+
+library(terra)
+
+# === Setup ===
+base_dir <- getwd()
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
+modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
+dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
+
+# === Load shapefile and MODIS raster ===
+regions <- vect(shapefile_path)
+modis_raster <- rast(modis_raster_path)
+
+# === Global MODIS class-to-LC mapping ===
+global_modis_mapping <- data.frame(
+  value = 1:17,
+  name = paste0("LC", 1:17)
+)
+
+# === Helper: UTM CRS by longitude ===
+get_utm_crs <- function(longitude, is_southern = FALSE) {
+  zone <- floor((longitude + 180) / 6) + 1
+  epsg <- ifelse(is_southern, 32700 + zone, 32600 + zone)
+  return(paste0("EPSG:", epsg))
+}
+
+# === Process Each Country ===
+for (country in unique(regions$CNTRY_NAME)) {
+  cat("\n--- Processing:", country, "---\n")
+  
+  country_polygon <- regions[regions$CNTRY_NAME == country, ]
+  centroid <- crds(centroids(country_polygon))
+  longitude <- centroid[1]
+  latitude <- centroid[2]
+  is_southern <- latitude < 0
+  
+  utm_crs <- get_utm_crs(longitude, is_southern)
+  country_polygon_utm <- project(country_polygon, utm_crs)
+  modis_raster_utm <- project(modis_raster, utm_crs)
+  
+  modis_cropped <- crop(modis_raster_utm, country_polygon_utm)
+  modis_masked <- mask(modis_cropped, country_polygon_utm)
+  
+  # === Extract values and reclassify to consistent global LC names ===
+  present_vals <- sort(na.omit(unique(values(modis_masked))))
+  if (length(present_vals) == 0) {
+    cat("⚠️ No values found for:", country, "\n")
+    next
+  }
+  
+  present_mapping <- global_modis_mapping[global_modis_mapping$value %in% present_vals, ]
+  reclass_mat <- matrix(ncol = 3, nrow = nrow(present_mapping))
+  for (i in seq_len(nrow(present_mapping))) {
+    val <- present_mapping$value[i]
+    reclass_mat[i, ] <- c(val - 0.5, val + 0.5, val)
+  }
+  
+  modis_reclassified <- classify(modis_masked, rcl = reclass_mat, include.lowest = TRUE)
+  levels(modis_reclassified) <- list(present_mapping)
+  
+  out_path <- file.path(modis_output_dir, paste0(country, "_modis_ref_map_8.tif"))
+  writeRaster(modis_reclassified, out_path, overwrite = TRUE)
+  cat("✅ Saved:", out_path, "\n")
+}
+
+cat("\n🎯 All reclassified MODIS country rasters saved with consistent LC names and UTM CRS.\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#--------------------------------------------------------------------------------
 # Base directory and paths
 base_dir <- getwd()
 shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
 modis_raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
 modis_output_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "by_country")
 plum_rasters_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", "SSP1_RCP26", "SSP1_RCP26_fraction")
+plum_rasters_dir
 plum_output_dir <- file.path(plum_rasters_dir, "SSP1_RCP26_fraction_croped")
+
+# Inspect original PLUM raster files
+
+file.exists(file.path(plum_rasters_dir, "SSP1_RCP26_LUC_fractions_2021_2022.tif"))
+
+full_path <- file.path(plum_rasters_dir, "SSP1_RCP26_LUC_fractions_2029_2030.tif")
+plum_ras_ori <- rast(full_path)
+plot(plum_ras_ori)
+
+
+
+
+
 
 # Ensure output directories exist
 dir.create(modis_output_dir, showWarnings = FALSE, recursive = TRUE)
@@ -198,17 +305,17 @@ cat("Inspecting Angola MODIS and PLUM raster data...\n")
 # Define paths to Angola rasters
 base_dir <- getwd()
 angola_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Angola_modis_ref_map_2.tif")
+                                      "by_country", "Angola_modis_ref_map_8.tif")
 
 
 Namibia_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Namibia_modis_ref_map_2.tif")
+                                      "by_country", "Namibia_modis_ref_map_8.tif")
 
 Botswana_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Botswana_modis_ref_map_2.tif")
+                                      "by_country", "Botswana_modis_ref_map_8.tif")
 
 Mauritius_modis_raster <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
-                                      "by_country", "Mauritius_modis_ref_map_2.tif")
+                                      "by_country", "Mauritius_modis_ref_map_8.tif")
 
 
 # Create raster for random countries for inspection
@@ -222,8 +329,35 @@ summary(Namibia_modis_raster)
 summary(Botswana_modis_raster)
 summary(Mauritius_modis_raster)
 unique(angola_modis_raster)
+plot(angola_modis_raster)
 unique(levels(angola_modis_raster))
 unique(Namibia_modis_raster)
+# Plot namibia LC13 class 
+plot(Namibia_modis_raster)
+# Replace 13 with your target class value
+target_class <- 1
+
+# Create mask for Class 13
+LC4 <- mask(
+  Namibia_modis_raster,
+  Namibia_modis_raster == target_class,
+  maskvalue = FALSE
+)
+
+# Plot with custom color
+plot(LC4, 
+     col = "red",  # Highlight class 13 in red
+     main = "Class 13 (Urban/Built-up) in Namibia")
+
+
+
+
+# Query values interactively by clicking on the map
+click(Namibia_modis_raster)
+
+
+
+
 unique(values(Namibia_modis_raster))
 unique(Botswana_modis_raster)
 # Inspect the raster projection and assigned Zones
@@ -236,7 +370,7 @@ results <- list(
 
 results
 
-
+library(terra)
 # Inspect the reclassified MODIS rasters
 # Define paths to reclassified MODIS rasters
 Angola_modis_raster_reclass <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", 
@@ -258,6 +392,7 @@ unique(Angola_modis_raster_reclass)
 levels(Angola_modis_raster_reclass)
 unique(Namibia_modis_raster_reclass)
 levels(Namibia_modis_raster_reclass)
+crs(Namibia_modis_raster_reclass)
 unique(Botswana_modis_raster_reclass)
 levels(Botswana_modis_raster_reclass)
 unique(Mauritius_modis_raster_reclass)
@@ -279,17 +414,20 @@ results_reclass
 # Inspect cropped and masked PLUM rasters
 
 Angola_plum_raster <- file.path(plum_output_dir, "Angola_SSP1_RCP26_LUC_fractions_2021_2022.tif")
-Angola_plum_raster
+# Angola_plum_raster
 Namibia_plum_raster <- file.path(plum_output_dir, "Namibia_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 Botswana_plum_raster <- file.path(plum_output_dir, "Botswana_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 Mauritius_plum_raster <- file.path(plum_output_dir, "Mauritius_SSP1_RCP26_LUC_fractions_2021_2022.tif")
 
 # Create raster for these countries
 Angola_plum_raster <- rast(Angola_plum_raster)
+plot(Angola_plum_raster)
 Namibia_plum_raster <- rast(Namibia_plum_raster)
+plot(Namibia_plum_raster)
 Botswana_plum_raster <- rast(Botswana_plum_raster)
+plot(Botswana_plum_raster)
 Mauritius_plum_raster <- rast(Mauritius_plum_raster)
-
+plot(Mauritius_plum_raster)
 # Inspect the raster's projection and asigned Zones
 plum.results <- list(
   "Angola PLUM Raster" = Angola_plum_raster,
@@ -434,3 +572,35 @@ downscaleLC_with_progress(
   output_dir_path = downscale_output_dir
 )
 
+
+
+
+
+
+library(terra)
+
+# === Setup ===
+base_dir <- getwd()
+scenario <- "SSP1_RCP26"
+sim      <- "s6"
+year     <- 2021
+
+# === File path ===
+plum_file <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs",
+                       scenario, sim, as.character(year),
+                       paste0(scenario, "_", sim, "_", year, "_MultiLayer_cropped.tif"))
+
+# === Load raster ===
+if (!file.exists(plum_file)) stop("Raster not found:", plum_file)
+plum_r <- rast(plum_file)
+
+# === Optional: drop unwanted layers ===
+drop_layers <- c("Protection", "cell_area", "cell_area_calc", "Photovoltaics", "Agrivoltaics", "CarbonForest")
+keep_layers <- setdiff(names(plum_r), drop_layers)
+plum_r <- plum_r[[keep_layers]]
+
+# === Plot all layers ===
+plot(plum_r, nc = 3, main = paste("PLUM Land Use Fractions -", scenario, sim, year))
+
+# === Optional: plot one specific layer ===
+# plot(plum_r[["Cropland"]], main = paste("Cropland Fraction -", scenario, sim, year))
