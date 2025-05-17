@@ -161,7 +161,7 @@ create_rasters <- function(climate_scenario) {
       multi_layer_raster <- c(multi_layer_raster, cell_area_raster)
       
       # Define the output file path for the multi-layer raster
-      output_filepath <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", climate_scenario, paste0("s1_", year, "_MultiLayer_3.tif"))
+      output_filepath <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", climate_scenario, paste0("s1_", year, "_MultiLayer_3.tif"))
       
       # Save the multi-layer raster as a GeoTIFF
       writeRaster(multi_layer_raster, output_filepath, filetype = "GTiff", overwrite = TRUE)
@@ -230,7 +230,6 @@ for (scenario in scenarios) {
   }
 }
 
-#-------------------------------------------------------------------------------
 
 
 
@@ -241,108 +240,365 @@ for (scenario in scenarios) {
 
 
 
+# # ============================================================
+# 
+# # ============================================================
+# # 0. Remove existing .tif / .tiff under scenario/sim folders
+# # ============================================================
+# library(tools)   # For file_ext, but we’ll do pattern matching instead
+# library(fs)      # Optionally for more advanced dir/file ops (not strictly needed)
+# 
+# base_dir <- getwd()
+# plum_root_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs")
+# 
+# # If these are your scenario & sim vectors:
+# scenarios   <- c("SSP1_RCP26","SSP2_RCP45","SSP3_RCP70","SSP4_RCP60","SSP5_RCP85")
+# simulations <- paste0("s", 1:10)
+# 
+# for (scenario in scenarios) {
+#   for (sim in simulations) {
+#     sim_folder <- file.path(plum_root_dir, scenario, sim)
+#     if (!dir.exists(sim_folder)) next
+#     
+#     # Recursively list all .tif or .tiff
+#     tif_files <- list.files(
+#       path       = sim_folder, 
+#       pattern    = "\\.tiff?$",  # regex matches .tif or .tiff
+#       recursive  = TRUE,        # go into subfolders
+#       full.names = TRUE
+#     )
+#     
+#     if (length(tif_files) > 0) {
+#       # Remove them
+#       file.remove(tif_files)
+#       cat("Removed", length(tif_files), "TIF files under", sim_folder, "\n")
+#     } else {
+#       cat("No TIF files found under", sim_folder, "\n")
+#     }
+#   }
+# }
+# cat("✅ Done removing old .tif/.tiff!\n")
+# 
+
+
+
+# # ============================================================
 
 
 
 
+# ============================================================
+# 0) Setup & Libraries
+# ============================================================
+library(terra)
+library(data.table)
+library(R.utils)
+library(doParallel)
+library(foreach)
 
+base_dir <- getwd()
+plum_root_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs")
 
+# Scenarios, simulations, years
+scenarios   <- c("SSP1_RCP26","SSP2_RCP45","SSP3_RCP70","SSP4_RCP60","SSP5_RCP85")
+simulations <- paste0("s", 1:10)
+years       <- 2020:2100
 
+# Shapefile path (only storing the path globally)
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
 
-
-
-
-
-
-
-#-------------------------------------------------------------------------------
-
-
-# Visualizing the Cropland layer for 2030 in each SSP-RCP scenario
-
-# Set up a 2x3 grid for the plots (2 rows, 3 columns, but there are only 5 scenarios)
-par(mfrow = c(2, 3))
-
-# Define the SSP-RCP scenarios
-scenarios <- c("SSP1_RCP26", "SSP2_RCP45", "SSP3_RCP70", "SSP4_RCP60", "SSP5_RCP85")
-
-# Define the year to inspect
-year <- 2030
-
-# Loop through each scenario to visualize the Cropland layer for 2030
-for (scenario in scenarios) {
+# ============================================================
+# 1) Create multi-layer raster from .txt
+# ============================================================
+create_multilayer_raster <- function(scenario, sim, year) {
+  gz_path  <- file.path(plum_root_dir, scenario, sim, as.character(year), "LandCover.txt.gz")
+  txt_path <- sub("\\.gz$", "", gz_path)
   
-  # Define the path to the masked raster for 2030 for the current scenario
-  raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", paste0("masked_", scenario), paste0("masked_s1_", year, "_", scenario, ".tif"))
+  if (!file.exists(gz_path)) {
+    cat("No LandCover.txt.gz for", scenario, sim, year, "\n")
+    return(NULL)
+  }
   
-  # Check if the raster file exists
-  if (file.exists(raster_path)) {
-    
-    # Load the raster for the year and scenario
-    raster_data <- rast(raster_path)
-    
-    # Check if Cropland exists in the raster, otherwise skip
-    if ("Cropland" %in% names(raster_data)) {
-      
-      # Extract the Cropland layer
-      cropland_layer <- raster_data[["Cropland"]]
-      
-      # Create a plot with a dynamic title based on the scenario and year
-      plot(cropland_layer, main = paste0("Cropland in 2030 - ", scenario), col = terrain.colors(100))
-      
-    } else {
-      # Print message if Cropland is not found in the raster
-      cat("Cropland layer not found in the raster for scenario", scenario, "in year", year, "\n")
-    }
-    
-  } else {
-    # Print a message if the raster file does not exist for the year and scenario
-    cat("Raster file not found for scenario", scenario, "in year", year, "\n")
+  if (!file.exists(txt_path)) {
+    gunzip(gz_path, destname=txt_path, overwrite=TRUE, remove=FALSE)
+    cat("Unzipped:", gz_path, "->", txt_path, "\n")
+  }
+  
+  dt <- fread(txt_path)
+  if ("TotalArea" %in% names(dt)) {
+    setnames(dt, old="TotalArea", new="cell_area")
+  }
+  if (!all(c("Lon","Lat") %in% names(dt))) {
+    cat("Missing Lon/Lat in", txt_path, "\n")
+    return(NULL)
+  }
+  
+  lon <- dt$Lon
+  lat <- dt$Lat
+  if (length(unique(lon))<2 || length(unique(lat))<2) {
+    cat("Not enough unique lat/lon for", scenario, sim, year, "\n")
+    return(NULL)
+  }
+  
+  # template
+  r_template <- rast(
+    nrows=length(unique(lat)),
+    ncols=length(unique(lon)),
+    xmin=min(lon), xmax=max(lon),
+    ymin=min(lat), ymax=max(lat),
+    crs="EPSG:4326"
+  )
+  
+  # coverage columns
+  skip_cols <- c("Lon","Lat","Protection")
+  coverage_cols <- setdiff(names(dt), skip_cols)
+  
+  ras_list <- list()
+  for (col_nm in coverage_cols) {
+    if (!is.numeric(dt[[col_nm]])) next
+    r_class <- r_template
+    r_class[] <- dt[[col_nm]] * 10000  # hectares->m²
+    names(r_class) <- col_nm
+    ras_list[[col_nm]] <- r_class
+  }
+  
+  # add Protection factor if present
+  if ("Protection" %in% names(dt)) {
+    r_prot <- r_template
+    r_prot[] <- as.numeric(as.factor(dt$Protection))
+    names(r_prot) <- "Protection"
+    ras_list[["Protection"]] <- r_prot
+  }
+  
+  if (length(ras_list)==0) {
+    cat("No coverage columns for", scenario, sim, year, "\n")
+    return(NULL)
+  }
+  
+  multi_rast <- rast(ras_list)
+  # cell area
+  r_area <- cellSize(r_template, unit="m")
+  names(r_area) <- "cell_area_calc"
+  multi_rast <- c(multi_rast, r_area)
+  
+  # output path
+  out_dir <- file.path(plum_root_dir, scenario, sim, as.character(year))
+  dir.create(out_dir, showWarnings=FALSE, recursive=TRUE)
+  
+  out_name <- paste0(scenario, "_", sim, "_", year, "_MultiLayer.tif")
+  out_path <- file.path(out_dir, out_name)
+  
+  writeRaster(multi_rast, out_path, overwrite=TRUE)
+  return(out_path)
+}
+
+# ============================================================
+# 2) Crop+Mask function: re-load shapefile
+# ============================================================
+crop_and_mask <- function(raster_path, scenario, sim, year, shp_path) {
+  if (!file.exists(raster_path)) return(NULL)
+  
+  # read the raster
+  r_data <- rast(raster_path)
+  
+  # load shapefile fresh inside child process
+  shp <- vect(shp_path)
+  if (crs(r_data) != crs(shp)) {
+    shp <- project(shp, crs(r_data))
+  }
+  
+  r_crop <- crop(r_data, shp)
+  r_mask <- mask(r_crop, shp)
+  
+  # save in same folder, appended _masked
+  out_dir <- dirname(raster_path)
+  out_name <- sub("\\.tif$", "_masked.tif", basename(raster_path))
+  out_path <- file.path(out_dir, out_name)
+  
+  writeRaster(r_mask, out_path, overwrite=TRUE)
+  return(out_path)
+}
+
+# ============================================================
+# 3) Parallel Loop
+# ============================================================
+combo <- expand.grid(scenario=scenarios, sim=simulations, year=years, stringsAsFactors=FALSE)
+total_tasks <- nrow(combo)
+
+# parallel cluster
+n_cores <- max(1, parallel::detectCores(logical=TRUE) - 0)
+cl <- makeCluster(n_cores)
+registerDoParallel(cl)
+
+task_count <- 0
+
+results <- foreach(i=seq_len(total_tasks), .packages=c("terra","data.table","R.utils")) %dopar% {
+  
+  row   <- combo[i, ]
+  scen  <- row$scenario
+  s     <- row$sim
+  yr    <- row$year
+  
+  # 1) Create multi-layer
+  r_path <- create_multilayer_raster(scen, s, yr)
+  if (!is.null(r_path)) {
+    # 2) Crop+mask
+    masked_path <- crop_and_mask(r_path, scen, s, yr, shapefile_path)
+  }
+  
+  # Basic progress line (order can be out-of-sequence in parallel)
+  paste0("Done: ", scen, " - ", s, " - ", yr)
+}
+
+stopCluster(cl)
+
+# Print final summary
+cat("\nAll tasks done! Created + masked rasters for any existing LandCover.txt.gz.\n")
+
+
+
+
+
+
+
+
+
+# ============================================================
+# i have run the year 2021 separately since it was missing.
+# ============================================================
+base_dir <- getwd()
+
+library(terra)
+library(data.table)
+
+plum_root_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs")
+
+# The scenario & simulation sets:
+scenarios   <- c("SSP1_RCP26","SSP2_RCP45","SSP3_RCP70","SSP4_RCP60","SSP5_RCP85")
+simulations <- paste0("s", 1:10)
+year_of_interest <- 2021
+
+# Path to shapefile
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+
+# ============================================================
+# 1) Single function: create + mask
+# ============================================================
+create_and_mask_2021 <- function(scenario, sim, year, shapefile_path) {
+  
+  # 1A) check for LandCover.txt
+  txt_path <- file.path(plum_root_dir, scenario, sim, as.character(year), "LandCover.txt")
+  if (!file.exists(txt_path)) {
+    cat("No LandCover.txt for", scenario, sim, year, "\n")
+    return(NULL)
+  }
+  
+  # 1B) read data
+  dt <- fread(txt_path)
+  if ("TotalArea" %in% names(dt)) {
+    setnames(dt, old="TotalArea", new="cell_area")
+  }
+  if (!all(c("Lon","Lat") %in% names(dt))) {
+    cat("Missing Lon/Lat in", txt_path, "\n")
+    return(NULL)
+  }
+  
+  lon <- dt$Lon
+  lat <- dt$Lat
+  if (length(unique(lon))<2 || length(unique(lat))<2) {
+    cat("Not enough unique lat/lon for", scenario, sim, year, "\n")
+    return(NULL)
+  }
+  
+  # 1C) create a template
+  r_template <- rast(
+    nrows=length(unique(lat)),
+    ncols=length(unique(lon)),
+    xmin=min(lon), xmax=max(lon),
+    ymin=min(lat), ymax=max(lat),
+    crs="EPSG:4326"
+  )
+  
+  # coverage columns
+  skip_cols <- c("Lon","Lat","Protection")
+  coverage_cols <- setdiff(names(dt), skip_cols)
+  
+  ras_list <- list()
+  for (col_nm in coverage_cols) {
+    if (!is.numeric(dt[[col_nm]])) next
+    r_class <- r_template
+    # multiply by 10000 if data is in hectares
+    r_class[] <- dt[[col_nm]] * 10000
+    names(r_class) <- col_nm
+    ras_list[[col_nm]] <- r_class
+  }
+  
+  # add "Protection" factor if present
+  if ("Protection" %in% names(dt)) {
+    r_prot <- r_template
+    r_prot[] <- as.numeric(as.factor(dt$Protection))
+    names(r_prot) <- "Protection"
+    ras_list[["Protection"]] <- r_prot
+  }
+  
+  if (length(ras_list)==0) {
+    cat("No coverage columns for", scenario, sim, year, "\n")
+    return(NULL)
+  }
+  
+  multi_rast <- rast(ras_list)
+  
+  # add cell_area_calc
+  r_area <- cellSize(r_template, unit="m")
+  names(r_area) <- "cell_area_calc"
+  multi_rast <- c(multi_rast, r_area)
+  
+  # 1D) Write unmasked TIF
+  out_dir <- file.path(plum_root_dir, scenario, sim, as.character(year))
+  dir.create(out_dir, showWarnings=FALSE, recursive=TRUE)
+  
+  out_name <- paste0(scenario, "_", sim, "_", year, "_MultiLayer.tif")
+  out_path <- file.path(out_dir, out_name)
+  
+  writeRaster(multi_rast, out_path, overwrite=TRUE)
+  cat("✅ Created multi-layer for", scenario, sim, year, "->", out_path, "\n")
+  
+  # 1E) Crop + mask
+  # re-load shapefile in this function so pointer is local
+  shp <- vect(shapefile_path)
+  if (crs(multi_rast) != crs(shp)) {
+    shp <- project(shp, crs(multi_rast))
+  }
+  r_crop <- crop(multi_rast, shp)
+  r_mask <- mask(r_crop, shp)
+  
+  # name for masked
+  masked_name <- sub("\\.tif$", "_masked.tif", out_name)
+  masked_path <- file.path(out_dir, masked_name)
+  
+  writeRaster(r_mask, masked_path, overwrite=TRUE)
+  cat("✅ Wrote masked TIF:", masked_path, "\n")
+  
+  return(TRUE)
+}
+
+# ============================================================
+# 2) Main loop over scenarios & sims
+# ============================================================
+for (scen in scenarios) {
+  for (sim in simulations) {
+    create_and_mask_2021(scen, sim, year_of_interest, shapefile_path)
   }
 }
 
-# Reset the plot layout to default (optional)
-par(mfrow = c(1, 1))
+cat("\nAll done creating & masking 2021 TIF files!\n")
 
 
-#-------------------------------------------------------------------------------
-# Inspecting the multi-layer raster stack
+
+# ============================================================
 
 
-# Define the climate scenario and the years of interest
-climate_scenario <- "SSP1_RCP26"
-years <- c(2022, 2040, 2060, 2080, 2100)
 
-# Define the land cover columns of interest for plotting
-landcover_columns <- c("Cropland", "Pasture", "Urban")
 
-# Loop through each year and inspect the rasters
-for (year in years) {
-  
-  # Define the path to the raster file for each year
-  raster_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref -PLUM_SSPs", paste0("masked_s1_", year, "_MultiLayer.tif"))
-  
-  # Load the multi-layer raster
-  multi_layer_raster <- rast(raster_path)
-  
-  # Print raster structure
-  cat("Structure of raster for year", year, ":\n")
-  print(str(multi_layer_raster))
-  
-  # Check the number of layers and display the first few rows of the data
-  cat("First few rows of raster for year", year, ":\n")
-  print(head(values(multi_layer_raster)))
-  
-  # Plot the relevant layers (Cropland, Pasture, Urban)
-  for (landcover_class in landcover_columns) {
-    if (landcover_class %in% names(multi_layer_raster)) {
-      plot(multi_layer_raster[[landcover_class]], main = paste(landcover_class, "in", year))
-    } else {
-      cat("Layer", landcover_class, "not found in raster for year", year, "\n")
-    }
-  }
-  
-  # Optional: You can also crop the raster for visualization purposes
-  # e.g., cropping to a specific extent if necessary
-}
+
 
