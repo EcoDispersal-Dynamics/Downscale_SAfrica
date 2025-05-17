@@ -7,7 +7,6 @@ library(LandScaleR)
 # PART 1: RECLASSIFY THE ORIGINAL MODIS REFERENCE MAP
 # Setup base directory and country name
 base_dir <- getwd()
-base_dir
 country_name <- "Angola"
 
 # Define the path to the original MODIS reference map (version 2)
@@ -169,20 +168,20 @@ if (!dir.exists(downscale_output_dir)) {
 }
 
 # -----------------------------------------------------------------------------
-# Downscaling process memory monitoring, time and file tracking
+# Example: Minimal Fix for Iteration-Based Filenames
+
 downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ...) {
-  # Stop if initial reference map is not found
-  if (!file.exists(ref_map_file_name)) {
-    stop("ERROR: MODIS reference map not found!")
-  }
-  
   start_time <- Sys.time()
   cat(sprintf("Starting downscaling process at: %s\n", start_time))
   
   log_file <- file.path(base_dir, "downscaling_log.txt")
   cat(sprintf("Processing started at: %s\n", start_time), file = log_file, append = TRUE)
   
-  current_ref_map <- ref_map_file_name  # Initialize with original reference map
+  if (!file.exists(ref_map_file_name)) {
+    stop("ERROR: MODIS reference map not found!")
+  }
+  
+  current_ref_map <- ref_map_file_name
   
   for (i in seq_along(LC_deltas_file_list)) {
     file <- LC_deltas_file_list[i]
@@ -204,11 +203,26 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     
     process_start <- Sys.time()
     
-    # Call downscaleLC using a flexible file prefix
+    # Continuous downscaled map (if relevant)
+    output_file <- file.path(
+      downscale_output_dir, 
+      paste0("Downscaled_ref_map_", years, ".tif")
+    )
+    
+    # ----------------------------------------------------------------
+    # REMOVE the if() statement and ALWAYS name the file with the
+    # current iteration index 'i' in the suffix:
+    # ----------------------------------------------------------------
+    discrete_output_file <- file.path(
+      downscale_output_dir, 
+      paste0("Angola_MODIS_PLUM_500m_s1_", years, "_Discrete_Time", i, ".tif")
+    )
+    
+    # Call the downscaleLC function
     downscaleLC(
       ref_map_file_name   = current_ref_map,
       LC_deltas_file_list = list(file),
-      output_file_prefix  = paste0(country_name, "_MODIS_PLUM_500m_s1_"),
+      output_file_prefix  = paste0(country_name, "_MODIS_PLUM_500m_s1_", years),
       ...
     )
     
@@ -218,15 +232,16 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
     ram_after <- sum(gc()[, 2])
     cat(sprintf("RAM Usage After Processing: %.2f MB\n", ram_after))
     
-    # Search for the newly created reference map (_Discrete_TimeX.tif) after downscaleLC()
-    pattern <- paste0("^", country_name, "_MODIS_PLUM_500m_s1_", years, "_Discrete_Time\\d+\\.tif$")
-    new_ref_map <- list.files(downscale_output_dir, pattern = pattern, full.names = TRUE)
-    
-    if (length(new_ref_map) > 0) {
-      current_ref_map <- tail(sort(new_ref_map), 1)  # Use the most recent file
-      cat(sprintf("Updated current reference map to: %s\n", current_ref_map))
+    # Update the reference map if the new discrete file was written successfully
+    if (file.exists(discrete_output_file)) {
+      current_ref_map <- discrete_output_file
     } else {
-      warning("WARNING: No new discrete output file found. Retaining previous reference map.")
+      warning(sprintf(
+        "WARNING: Expected reference map not found: %s. Using last available map instead.", 
+        discrete_output_file
+      ))
+      cat(sprintf("WARNING: Missing next reference map: %s\n", discrete_output_file), 
+          file = log_file, append = TRUE)
     }
     
     log_message <- sprintf(
@@ -243,7 +258,6 @@ downscaleLC_with_progress <- function(ref_map_file_name, LC_deltas_file_list, ..
   cat(sprintf("Downscaling completed at: %s (Total: %.2f mins)\n", 
               end_time, total_time), file = log_file, append = TRUE)
 }
-
 
 # -----------------------------------------------------------------------------
 # Run the Downscaling Function with Memory Profiling Using profmem
@@ -271,6 +285,7 @@ prof <- profmem({
 
 print(summary(prof))
 
+# -----------------------------------------------------------------------------
 
 # # Load first downscaled reference map
 # first_downscaled_ref_map_path <- file.path(
