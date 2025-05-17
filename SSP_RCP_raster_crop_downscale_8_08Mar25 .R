@@ -47,7 +47,7 @@ match_LC_classes <- matrix(
 
 # 🛠️ **Populate Matching Matrix**
 allocations <- list(
-  Cropland       = c("LC12" = 0.5, "LC14" = 0.5),
+  Cropland       = c("LC12" = 0.45, "LC14" = 0.55),
   Pasture        = c("LC6"  = 0.1, "LC7"  = 0.2, "LC8"  = 0.1, "LC9"  = 0.2,  
                      "LC10" = 0.2, "LC11" = 0.1, "LC16" = 0.1),
   TimberForest   = c("LC1"  = 0.1, "LC2"  = 0.2, "LC4"  = 0.2, "LC5"  = 0.1,  
