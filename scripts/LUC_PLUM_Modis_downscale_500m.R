@@ -6,7 +6,7 @@
 # Set the base directory dynamically to the current working directory
 base_dir <- getwd()
 
-
+library(terra)
 
 # Lets first inspect MODIS reference map
 # Paths for MODIS original file, this file is just inspected but will not be modified
@@ -25,6 +25,11 @@ plot(modis_raster, main = "MODIS Raster Classes")
 unique_modis_classes <- unique(values(modis_raster))
 unique_modis_classes
 levels(modis_raster)
+unique(modis_raster)  # Check unique values (classes)
+values(modis_raster)  # Check values in the raster
+head(values(modis_raster))  # Check first few values
+head(modis_raster)  # Check first few rows of the raster
+
 
 # Create memory raster to modify and organize the layers without changing the original raster above
 modis_ref_map <- rast(modis_ref_map_path)
@@ -73,8 +78,8 @@ levels(modis_ref_map)     # Check the reordered levels
 unique(modis_ref_map)     # Check the unique values (classes
 all.equal(as.integer(rownames(levels(modis_ref_map)[[1]])), 1:17)
 # Save Modis reference map as map 2
-modis_ref_map_2_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
-writeRaster(modis_ref_map, modis_ref_map_2_path, overwrite = TRUE)
+# modis_ref_map_2_path <- file.path(base_dir, "LU_ref_dataset", "LU_ref_Modis_500m", "modis_ref_map_2.tif")
+# writeRaster(modis_ref_map, modis_ref_map_2_path, overwrite = TRUE)
 
 
 # Reload map 2 and check unique values to inspect if changes were made during file saving.
