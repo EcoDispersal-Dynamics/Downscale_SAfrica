@@ -246,7 +246,7 @@ foreach(
   
   scenario_name <- basename(scenario_dir)
   plum_raster_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction"))
-  plum_output_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction_croped"))
+  plum_output_dir <- file.path(plum_raster_dir, paste0(scenario_name, "_fraction_croped"))
   dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
   
   plum_raster_files <- list.files(
@@ -298,8 +298,8 @@ base_dir <- getwd()
 shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
 scenario_name <- "SSP2_RCP45"
 scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", scenario_name)
-plum_raster_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction"))  # Check your folder name!
-plum_output_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction_croped"))
+plum_raster_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction"))
+plum_output_dir <- file.path(plum_raster_dir, paste0(scenario_name, "_fraction_croped"))
 
 # -- Step 1: Check that all input/output folders exist --
 cat("Shapefile exists:", file.exists(shapefile_path), "\n")
