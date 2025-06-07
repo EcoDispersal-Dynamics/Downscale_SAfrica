@@ -199,6 +199,174 @@ for (country in unique(regions$CNTRY_NAME)) {
 
 #--------------------------------------------------------------------------------
 
+
+library(terra)
+library(foreach)
+library(doParallel)
+
+# --- SETUP PATHS ---
+base_dir <- getwd()
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+scenarios_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs")
+
+# --- PARALLEL SETUP ---
+n_cores <- max(1, detectCores() - 1)
+cl <- makeCluster(n_cores)
+registerDoParallel(cl)
+
+# --- LOAD SHAPEFILE (ONCE) ---
+regions <- vect(shapefile_path)
+
+# --- UTM CRS FUNCTION ---
+get_utm_crs <- function(longitude, is_southern = FALSE) {
+  zone <- floor((longitude + 180) / 6) + 1
+  epsg <- ifelse(is_southern, 32700 + zone, 32600 + zone)
+  return(paste0("EPSG:", epsg))
+}
+
+# --- GET LIST OF SCENARIOS (EXCLUDING SSP1_RCP26) ---
+scenarios <- list.dirs(scenarios_dir, full.names = TRUE, recursive = FALSE)
+scenarios <- scenarios[!grepl("SSP1_RCP26$", scenarios)] # Exclude processed
+
+# --- MAIN PARALLEL LOOP (WITH EXPORTS) ---
+foreach(
+  scenario_dir = scenarios,
+  .packages = "terra"
+) %dopar% {
+  # Load shapefile INSIDE the worker
+  shapefile_path <- file.path(getwd(), "SAfrica_region", "SAfrica_states_proj_final.shp")
+  regions <- vect(shapefile_path)
+  
+  # Define UTM CRS function inside (it’s short)
+  get_utm_crs <- function(longitude, is_southern = FALSE) {
+    zone <- floor((longitude + 180) / 6) + 1
+    epsg <- ifelse(is_southern, 32700 + zone, 32600 + zone)
+    return(paste0("EPSG:", epsg))
+  }
+  
+  scenario_name <- basename(scenario_dir)
+  plum_raster_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction"))
+  plum_output_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction_croped"))
+  dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
+  
+  plum_raster_files <- list.files(
+    plum_raster_dir,
+    pattern = paste0("^", scenario_name, "_LUC_fractions_.*\\.tif$"),
+    full.names = TRUE
+  )
+  
+  # STEP-BY-STEP VERIFICATION
+  cat("[", scenario_name, "] Found", length(plum_raster_files), "PLUM rasters\n")
+  
+  cnames <- names(regions)
+  cat("[", scenario_name, "] Shapefile columns:", paste(cnames, collapse = ","), "\n")
+  
+  ucn <- unique(regions$CNTRY_NAME)
+  cat("[", scenario_name, "] Countries to process:", paste(ucn, collapse = ","), "\n")
+  
+  for (country in ucn) {
+    cat("[", scenario_name, "] Processing country:", country, "\n")
+    country_polygon <- regions[regions$CNTRY_NAME == country, ]
+    centroid <- crds(centroids(country_polygon))
+    longitude <- centroid[1]
+    latitude <- centroid[2]
+    is_southern <- latitude < 0
+    utm_crs <- get_utm_crs(longitude, is_southern)
+    country_polygon_utm <- project(country_polygon, utm_crs)
+    for (plum_raster_path in plum_raster_files) {
+      plum_raster <- rast(plum_raster_path)
+      plum_raster_utm <- project(plum_raster, utm_crs)
+      plum_cropped <- crop(plum_raster_utm, country_polygon_utm)
+      plum_masked <- mask(plum_cropped, country_polygon_utm)
+      plum_raster_name <- basename(plum_raster_path)
+      plum_output_path <- file.path(plum_output_dir, paste0(country, "_", plum_raster_name))
+      cat("[", scenario_name, "] Writing", plum_output_path, "\n")
+      writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
+    }
+  }
+}
+
+
+stopCluster(cl)
+cat("All remaining scenarios processed in parallel.\n")
+
+
+# Process the SSP1_RCP26 scenario separately because it was skipped due to missing files.
+
+# -- Define base and scenario-specific paths --
+base_dir <- getwd()
+shapefile_path <- file.path(base_dir, "SAfrica_region", "SAfrica_states_proj_final.shp")
+scenario_name <- "SSP2_RCP45"
+scenario_dir <- file.path(base_dir, "LU_ref_dataset", "LU_ref_PLUM_SSPs", scenario_name)
+plum_raster_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction"))  # Check your folder name!
+plum_output_dir <- file.path(scenario_dir, paste0(scenario_name, "_fraction_croped"))
+
+# -- Step 1: Check that all input/output folders exist --
+cat("Shapefile exists:", file.exists(shapefile_path), "\n")
+cat("Input raster folder exists:", dir.exists(plum_raster_dir), "\n")
+cat("Output raster folder:", plum_output_dir, "\n")
+
+if (!dir.exists(plum_output_dir)) {
+  dir.create(plum_output_dir, showWarnings = FALSE, recursive = TRUE)
+  cat("Output folder created.\n")
+}
+
+# -- Step 2: List input raster files --
+plum_raster_files <- list.files(
+  plum_raster_dir,
+  pattern = paste0("^", scenario_name, "_LUC_fractions_.*\\.tif$"),  # <- added _LUC_
+  full.names = TRUE
+)
+cat("Found", length(plum_raster_files), "PLUM raster(s):\n")
+print(basename(plum_raster_files))
+
+# -- Step 3: Load shapefile and print columns --
+regions <- vect(shapefile_path)
+cat("Columns in shapefile:", paste(names(regions), collapse=", "), "\n")
+cat("Countries found:\n")
+print(unique(regions$CNTRY_NAME))
+
+# -- Step 4: UTM CRS function --
+get_utm_crs <- function(longitude, is_southern = FALSE) {
+  zone <- floor((longitude + 180) / 6) + 1
+  epsg <- ifelse(is_southern, 32700 + zone, 32600 + zone)
+  return(paste0("EPSG:", epsg))
+}
+
+# -- Step 5: Crop and mask rasters per country --
+for (country in unique(regions$CNTRY_NAME)) {
+  cat("Processing country:", country, "\n")
+  country_polygon <- regions[regions$CNTRY_NAME == country, ]
+  centroid <- crds(centroids(country_polygon))
+  longitude <- centroid[1]
+  latitude <- centroid[2]
+  is_southern <- latitude < 0
+  utm_crs <- get_utm_crs(longitude, is_southern)
+  country_polygon_utm <- project(country_polygon, utm_crs)
+  
+  for (plum_raster_path in plum_raster_files) {
+    cat("Processing raster:", basename(plum_raster_path), "\n")
+    plum_raster <- rast(plum_raster_path)
+    plum_raster_utm <- project(plum_raster, utm_crs)
+    plum_cropped <- crop(plum_raster_utm, country_polygon_utm)
+    plum_masked <- mask(plum_cropped, country_polygon_utm)
+    plum_raster_name <- basename(plum_raster_path)
+    plum_output_path <- file.path(plum_output_dir, paste0(country, "_", plum_raster_name))
+    cat("Writing to:", plum_output_path, "\n")
+    writeRaster(plum_masked, plum_output_path, overwrite = TRUE)
+  }
+}
+
+cat("Processing complete for", scenario_name, "\n")
+
+
+
+
+#-------------------------------------------------------------------------------
+
+
+
+
 # Experiment 1
 # Reclassifying modis reference maps for each country
 
