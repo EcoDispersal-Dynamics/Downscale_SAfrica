@@ -1,20 +1,45 @@
 # Exclude LU_downscalled_dataset folder and its contents
 # Ignore the entire folder
 LU_ref_dataset/LU_ref_PLUM_SSPs/
+
 # Then allow this sub-folder first
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
+
 # Allow specific .tif files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26_test.tif
 !LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26_test.tif
+
 # Secondly, allow this entire folder as well so that I can commit one country Angola test files
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
+
 # Thirdly, Ignore all files in the croped folder
 LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
+
 # Allow Angola files from 2021-2022 to 2099-2100
 !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
-#
+
+# End of files restriction for testing purposes, 
+# Now that the entire project is set up, the rest of proccessed files will be un-ignoored and commited 
+# So that they are available for simulations
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+# Un-ignore all proccessed files for commits and make them available for remote repos on Git and IFU's Owl HPC
+
+# Ignore everything under LU_ref_PLUM_SSPs by default
+LU_ref_dataset/LU_ref_PLUM_SSPs/
+
+# Unignore all *_fraction_croped folders and all files inside them, any scenario
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/**
+
+
+
 .Rproj.user/
 # Ignore R session and history files
 .RData
