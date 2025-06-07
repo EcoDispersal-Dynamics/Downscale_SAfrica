@@ -1,47 +1,35 @@
-# Exclude LU_downscalled_dataset folder and its contents
-# Ignore the entire folder
+# ============================================
+# Sub-Saharan Africa Downscaling Project .gitignore file management
+# ============================================
+
+# --- Ignore everything under PLUM SSPs ---
 LU_ref_dataset/LU_ref_PLUM_SSPs/
 
-# Then allow this sub-folder first
-!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/*
+# ------------------- PROOF OF INITIAL ANGOLA-ONLY STAGING ---------------------
+# The following rules were used initially to only allow Angola cropped files for SSP1_RCP26:
+# (Now commented out, but preserved as record of initial selective commit setup)
+#
+# # Allow cropped folder for SSP1_RCP26
+# !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
+# # Ignore all files in the cropped folder
+# LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
+# # Allow only Angola's files (all years)
+# !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
+#
+# -----------------------------------------------------------------------------
 
-# Allow specific .tif files
-!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26.tif
-!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26.tif
-!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2022_SSP1_RCP26_test.tif
-!LU_ref_dataset/LU_ref_PLUM_SSPs/masked_SSP1_RCP26/masked_s1_2023_SSP1_RCP26_test.tif
+# ----------------- CURRENT RULES: Unignore ALL cropped output for ALL scenarios ---------------
 
-# Secondly, allow this entire folder as well so that I can commit one country Angola test files
-!LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
-
-# Thirdly, Ignore all files in the croped folder
-LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
-
-# Allow Angola files from 2021-2022 to 2099-2100
-!LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
-
-# End of files restriction for testing purposes, 
-# Now that the entire project is set up, the rest of proccessed files will be un-ignoored and commited 
-# So that they are available for simulations
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-# Un-ignore all proccessed files for commits and make them available for remote repos on Git and IFU's Owl HPC
-
-# Ignore everything under LU_ref_PLUM_SSPs by default
-LU_ref_dataset/LU_ref_PLUM_SSPs/
-
-# Unignore all *_fraction_croped folders and all files inside them, any scenario
+# Unignore (track) all *_fraction_croped folders and ALL files inside, any scenario, any country
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/**
 
+# -----------------------------------------------------------------------------
 
-
+# General project ignores
 .Rproj.user/
-# Ignore R session and history files
 .RData
 .Rhistory
 downscaling_log.txt
+
+# (add other project-specific patterns as needed)
