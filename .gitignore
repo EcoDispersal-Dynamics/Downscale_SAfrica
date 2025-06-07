@@ -6,15 +6,19 @@
 # Ignore all large LU_ref_PLUM_SSPs data and subfolders by default
 LU_ref_dataset/LU_ref_PLUM_SSPs/
 
-# ----------------------------------------------------------------
-# (HISTORIC PROOF/REFERENCE ONLY, can be removed if not needed)
-# # These were the initial rules to allow only Angola test files:
+# ================= HISTORIC RULES FOR INITIAL TESTING (KEPT FOR RECORD) =================
+# # These rules were initially used to only allow Angola test files:
 # !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
 # LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
 # !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
 
-# ----------------------------------------------------------------
-# UNIVERSAL RULES: Track all processed/cropped output files for ALL scenarios, ALL countries
+# ================= MAIN RULES TO TRACK ALL CROPPED OUTPUT =================
+
+# Unignore parent folders so Git will descend into them and see nested files
+!LU_ref_dataset/
+!LU_ref_dataset/LU_ref_PLUM_SSPs/
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/**
 
@@ -25,4 +29,4 @@ LU_ref_dataset/LU_ref_PLUM_SSPs/
 .Rhistory
 downscaling_log.txt
 
-# (add any other temp or cache files here if needed)
+# (add other temp or cache files here if needed)
