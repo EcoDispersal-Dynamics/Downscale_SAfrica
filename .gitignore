@@ -1,35 +1,28 @@
-# ============================================
-# Sub-Saharan Africa Downscaling Project .gitignore file management
-# ============================================
+# ===============================
+# .gitignore for KAZA Downscaling
+# ===============================
 
-# --- Ignore everything under PLUM SSPs ---
+# ----------------------------------------------------------------
+# Ignore all large LU_ref_PLUM_SSPs data and subfolders by default
 LU_ref_dataset/LU_ref_PLUM_SSPs/
 
-# ------------------- PROOF OF INITIAL ANGOLA-ONLY STAGING ---------------------
-# The following rules were used initially to only allow Angola cropped files for SSP1_RCP26:
-# (Now commented out, but preserved as record of initial selective commit setup)
-#
-# # Allow cropped folder for SSP1_RCP26
+# ----------------------------------------------------------------
+# (HISTORIC PROOF/REFERENCE ONLY, can be removed if not needed)
+# # These were the initial rules to allow only Angola test files:
 # !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
-# # Ignore all files in the cropped folder
 # LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
-# # Allow only Angola's files (all years)
 # !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
-#
-# -----------------------------------------------------------------------------
 
-# ----------------- CURRENT RULES: Unignore ALL cropped output for ALL scenarios ---------------
-
-# Unignore (track) all *_fraction_croped folders and ALL files inside, any scenario, any country
+# ----------------------------------------------------------------
+# UNIVERSAL RULES: Track all processed/cropped output files for ALL scenarios, ALL countries
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/**
 
-# -----------------------------------------------------------------------------
-
-# General project ignores
+# ----------------------------------------------------------------
+# Ignore common R project/working files
 .Rproj.user/
 .RData
 .Rhistory
 downscaling_log.txt
 
-# (add other project-specific patterns as needed)
+# (add any other temp or cache files here if needed)
