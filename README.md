@@ -8,7 +8,7 @@ This project downscales PLUM v2 land use projections from their native 0.5° res
 
 The repository contains development code for eight model variants. The released product for publication is the **deterministic_2.1** configuration, selected through a four-diagnostic assessment framework documented in the associated ESSD data paper.
 
-**Detailed Documentation:** Comprehensive methodology, data specifications, output structure, and usage instructions are available in the Zenodo data deposit (DOI: 10.5281/zenodo.XXXXXXX).
+**Detailed Documentation:** Comprehensive methodology, data specifications, output structure, and usage instructions are available in the Zenodo data deposit (DOI: <ADD DOI>).
 
 ## Repository Contents
 
