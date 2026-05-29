@@ -138,9 +138,11 @@ if (file.exists(esa_waterfilled_path)) {
 full_ref <- terra::rast(esa_ref_path)
 log_msg(paste("ESA reference loaded:", esa_ref_path))
 
-vals <- unique(terra::values(full_ref))
-vals <- vals[!is.na(vals) & vals != 0]
-vals <- sort(vals)
+vals <- tryCatch({
+  f <- terra::freq(full_ref, useNA = "no")
+  as.integer(f[, 1])
+}, error = function(e) integer(0))
+vals <- sort(unique(vals[!is.na(vals) & vals != 0]))
 if (length(vals) > 0) {
   cats_df <- data.frame(ID = vals, name = paste0("LC", vals))
   try({ terra::cats(full_ref, 1) <- cats_df }, silent = TRUE)
