@@ -86,3 +86,26 @@ ESA_PLUM_Downscaled/**
 !ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sh
 !ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.csh
 !ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sbatch
+
+# ===============================================================
+# Release hardening: block generated artifacts and runtime outputs
+# ===============================================================
+
+# Runtime logs and temporary outputs
+*.log
+*.out
+*.err
+Rplots.pdf
+
+# Common runtime output folders across workflows
+logs/
+slurm_logs/
+**/logs/
+**/output/
+
+# Legacy report artifacts not part of release payload
+All_Dendrograms_3x2.png
+Country_Synergy_Summary.csv
+interactive_table.html
+run_r_script.out
+run_r_script.err
