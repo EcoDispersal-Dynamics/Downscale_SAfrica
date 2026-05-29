@@ -109,3 +109,28 @@ Country_Synergy_Summary.csv
 interactive_table.html
 run_r_script.out
 run_r_script.err
+
+# ===============================================================
+# Local legacy workspace content (keep out of release branch)
+# ===============================================================
+
+# Local data/work folders used during exploratory setup
+Africa_Shapefile/
+analysis/
+docs/
+ESA_WorldCover/
+MODIS_Africa_Data/
+MODIS_PLUM_Downscaled/
+PLUM_Africa_Data/
+slurm_scripts/
+scripts/MODIS_Processing/
+scripts/r/
+scripts/shell/
+
+# Local git recovery snapshots and scratch artifacts
+.git_corrupt_*/
+create_visualizations_*.log
+merge_results_*.log
+cookies.txt
+cmr_search_results.json
+1
