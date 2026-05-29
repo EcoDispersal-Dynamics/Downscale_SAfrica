@@ -134,3 +134,8 @@ merge_results_*.log
 cookies.txt
 cmr_search_results.json
 1
+
+# Local editor/project metadata and private environment setup
+.vscode/
+Documentation/
+kaza_elephant.code-workspace
