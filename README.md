@@ -48,7 +48,7 @@ Each variant folder contains:
 ## Requirements
 
 - R 4.2.2 or higher
-- LandScaleR package (v1.2.0)
+- LandScaleR package (>= 1.2.0)
 - R packages: terra, future, sf
 - SLURM-based HPC environment (for parallel processing)
 
