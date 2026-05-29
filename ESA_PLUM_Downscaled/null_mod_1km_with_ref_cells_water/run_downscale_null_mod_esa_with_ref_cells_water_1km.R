@@ -1,13 +1,12 @@
 #!/usr/bin/env Rscript
 
 # ================================================================
-# ESA_PLUM_Downscaled: Null model downscaling at 500m (assign_ref_cells = TRUE, water-filled reference)
-# - Uses ESA WorldCover 2021 500m water-filled raster so every coarse cell has coverage
+# ESA_PLUM_Downscaled: Null model downscaling at 1km (assign_ref_cells = TRUE, water-filled reference)
+# - Uses ESA WorldCover 2021 1km water-filled raster so every coarse cell has coverage
 # - Uses PLUM deltas as inputs
 # - Iteratively updates reference each year
-# - Restricted to scenarios: SSP1_RCP26, SSP5_RCP85
+# - Restricted to scenarios: SSP2_RCP45, SSP3_RCP70, SSP4_RCP60
 # - Regions: 4 x 2 grid (8 regions total)
-# Created: 2025-10-15 (derived from run_downscale_null_mod_esa_with_ref_cells_water.R)
 # ================================================================
 
 user_lib_path <- "/bg/home/shiweda-m/R/library"
@@ -22,16 +21,16 @@ if (dir.exists(user_lib_path)) {
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) {
   cat("ERROR: Please provide a scenario name and region ID\n")
-  cat("Usage: Rscript run_downscale_null_mod_esa_with_ref_cells_water_500m.R <scenario_name> <region_id>\n")
+  cat("Usage: Rscript run_downscale_null_mod_esa_with_ref_cells_water_1km.R <scenario_name> <region_id>\n")
   quit(status = 1)
 }
 
 scenario_name <- args[1]
 region_id <- as.integer(args[2])
 
-allowed_scenarios <- c("SSP1_RCP26", "SSP5_RCP85")
+allowed_scenarios <- c("SSP2_RCP45", "SSP3_RCP70", "SSP4_RCP60")
 if (!(scenario_name %in% allowed_scenarios)) {
-  cat("ERROR: Only SSP1_RCP26 and SSP5_RCP85 are supported in ESA runs.\n")
+  cat("ERROR: Only SSP2_RCP45, SSP3_RCP70, and SSP4_RCP60 are supported in this 1km ESA run.\n")
   quit(status = 1)
 }
 
@@ -56,12 +55,12 @@ cat(paste("Using", future::nbrOfWorkers(), "workers\n"))
 
 base_dir <- "/bg/data/kaza_elephant/Downscale_SAfrica"
 esa_root <- file.path(base_dir, "ESA_PLUM_Downscaled")
-module_root <- file.path(esa_root, "null_mod_500_with_ref_cells_water")
+module_root <- file.path(esa_root, "null_mod_1km_with_ref_cells_water")
 log_dir <- file.path(module_root, "logs")
 dir.create(log_dir, showWarnings = FALSE, recursive = TRUE)
 timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
-log_file <- file.path(log_dir, paste0(scenario_name, "_region", region_id, "_null_mod_500_with_ref_cells_water_ESA_", timestamp, ".log"))
-cat(paste0("=== ESA Null Model 500m (assign_ref_cells=TRUE) (", scenario_name, ", Region ", region_id, ") ===\n"), file = log_file)
+log_file <- file.path(log_dir, paste0(scenario_name, "_region", region_id, "_null_mod_1km_with_ref_cells_water_ESA_", timestamp, ".log"))
+cat(paste0("=== ESA Null Model 1km (assign_ref_cells=TRUE) (", scenario_name, ", Region ", region_id, ") ===\n"), file = log_file)
 cat("Started at:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n", file = log_file, append = TRUE)
 
 log_msg <- function(msg) {
@@ -110,7 +109,7 @@ ensure_reference_cover <- function(ref_raster, label, write_path = NULL, fill_va
 
 log_msg(paste("Scenario:", scenario_name))
 log_msg(paste("Region:", region_id))
-log_msg("Simulation: null_model_500_with_ref_cells_water (ESA reference)")
+log_msg("Simulation: null_model_1km_with_ref_cells_water (ESA reference)")
 
 custom_temp <- file.path(module_root, "temp_r_files", paste0(scenario_name, "_region", region_id))
 dir.create(custom_temp, showWarnings = FALSE, recursive = TRUE)
@@ -122,17 +121,17 @@ output_dir <- file.path(module_root, "output", scenario_name, paste0("region", r
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 log_msg(paste("Output dir:", output_dir))
 
-esa_waterfilled_path <- file.path(base_dir, "ESA_WorldCover/processed/processed_500m/ESA_WorldCover_2021_aligned_500m_waterfilled.tif")
-esa_fixed_path <- file.path(base_dir, "ESA_WorldCover/processed/processed_500m/ESA_WorldCover_2021_aligned_500m_fixed.tif")
+esa_waterfilled_path <- file.path(base_dir, "ESA_WorldCover/processed/processed_1km/ESA_WorldCover_2021_aligned_1km_waterfilled.tif")
+esa_fixed_path <- file.path(base_dir, "ESA_WorldCover/processed/processed_1km/ESA_WorldCover_2021_aligned_1km_fixed.tif")
 
 if (file.exists(esa_waterfilled_path)) {
   esa_ref_path <- esa_waterfilled_path
-  log_msg(paste("ESA 500m water-filled reference detected:", esa_ref_path))
+  log_msg(paste("ESA 1km water-filled reference detected:", esa_ref_path))
 } else if (file.exists(esa_fixed_path)) {
   esa_ref_path <- esa_fixed_path
   log_msg("WARNING: Running without water-filled ESA reference; expect assign_ref_cells fallbacks.")
 } else {
-  log_msg("ERROR: ESA 500m reference not found.")
+  log_msg("ERROR: ESA 1km reference not found.")
   quit(status = 1)
 }
 
@@ -150,7 +149,8 @@ if (length(vals) > 0) {
 full_ext <- terra::ext(full_ref)
 x_range <- full_ext[2] - full_ext[1]
 y_range <- full_ext[4] - full_ext[3]
-x_div <- 4; y_div <- 2
+x_div <- 4
+y_div <- 2
 regions <- list()
 for (y in 1:y_div) for (x in 1:x_div) {
   idx <- (y - 1) * x_div + x
@@ -169,11 +169,15 @@ region_ref <- terra::crop(full_ref, region_extent)
 region_ref_cover <- ensure_reference_cover(region_ref, paste0("initial region ref (region ", region_id, ")"))
 region_ref <- region_ref_cover$raster
 
-initial_ref_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_initial_ref_map_500m.tif"))
+initial_ref_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_initial_ref_map_1km.tif"))
 terra::writeRaster(region_ref, initial_ref_path, overwrite = TRUE)
 log_msg(paste("Saved initial ref:", initial_ref_path))
 
-existing_outputs <- list.files(output_dir, pattern = paste0(scenario_name, "_region", region_id, "_.*_Discrete_Time1\\.tif$"), full.names = TRUE)
+existing_outputs <- list.files(
+  output_dir,
+  pattern = paste0(scenario_name, "_region", region_id, "_.*_1km_Discrete_Time1\\.tif$"),
+  full.names = TRUE
+)
 start_year_index <- 1
 current_ref_path <- initial_ref_path
 if (length(existing_outputs) > 0) {
@@ -195,19 +199,14 @@ if (length(plum_files) == 0) {
 log_msg(paste("Found", length(plum_files), "PLUM files"))
 
 if (length(existing_outputs) > 0) {
-  # Extract year strings for all PLUM inputs
   get_year_str <- function(path) {
     ym <- regexpr("_([0-9]{4}_[0-9]{4})_", path, perl = TRUE)
     if (ym > 0) substr(path, ym + 1, ym + 9) else NA_character_
   }
   plum_years <- vapply(plum_files, get_year_str, character(1))
-
-  # Extract the last completed year from the latest output (works for both ..._500m_Discrete_Time1.tif
-  # and ..._Discrete_Time1_500m.tif naming orders)
   latest_output <- sort(existing_outputs)[length(existing_outputs)]
   last_year <- get_year_str(latest_output)
 
-  # Prefer exact alignment by year string if found; otherwise fall back to per-file existence checks
   if (!is.na(last_year)) {
     idx <- which(plum_years == last_year)
     if (length(idx) == 1) {
@@ -216,14 +215,12 @@ if (length(existing_outputs) > 0) {
     }
   }
 
-  # Fallback: check for existing outputs per year with either filename order
   if (start_year_index == 1) {
     for (i in 1:length(plum_files)) {
       ystr <- plum_years[i]
       if (is.na(ystr)) next
-      out_file1 <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_", ystr, "_500m_Discrete_Time1.tif"))
-      out_file2 <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_", ystr, "_Discrete_Time1_500m.tif"))
-      if (file.exists(out_file1) || file.exists(out_file2)) start_year_index <- i + 1
+      out_file <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_", ystr, "_1km_Discrete_Time1.tif"))
+      if (file.exists(out_file)) start_year_index <- i + 1
     }
   }
 
@@ -251,7 +248,7 @@ build_synergy <- function(plum_layer_names, modis_classes) {
     if (length(valid_modis) > 0) {
       M[cat, valid_modis] <- allocations[[cat]][valid_modis]
     } else {
-      w <- rep(1/length(modis_classes), length(modis_classes))
+      w <- rep(1 / length(modis_classes), length(modis_classes))
       names(w) <- modis_classes
       M[cat, ] <- w
     }
@@ -281,12 +278,12 @@ for (year_index in start_year_index:length(plum_files)) {
 
   full_plum <- terra::rast(plum_file)
   region_plum <- terra::crop(full_plum, region_extent)
-  region_plum_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_plum_", year_str, "_500m.tif"))
+  region_plum_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_plum_", year_str, "_1km.tif"))
   terra::writeRaster(region_plum, region_plum_path, overwrite = TRUE)
   log_msg(paste("Saved regional PLUM:", region_plum_path))
 
   region_ref <- terra::rast(current_ref_path)
-  filled_ref_path <- file.path(custom_temp, paste0(scenario_name, "_region", region_id, "_", year_str, "_ref_filled_500m.tif"))
+  filled_ref_path <- file.path(custom_temp, paste0(scenario_name, "_region", region_id, "_", year_str, "_ref_filled_1km.tif"))
   cover_result <- ensure_reference_cover(region_ref, paste0("ref for year ", year_str), write_path = filled_ref_path)
   region_ref <- cover_result$raster
   ref_path_for_run <- if (!is.null(cover_result$path) && cover_result$filled) cover_result$path else current_ref_path
@@ -296,15 +293,19 @@ for (year_index in start_year_index:length(plum_files)) {
     if (!is.null(cf) && nrow(cf) > 0) {
       as.integer(cf$ID)
     } else {
-      v <- unique(terra::values(region_ref)); v <- v[!is.na(v)] ; as.integer(v)
+      v <- unique(terra::values(region_ref))
+      v <- v[!is.na(v)]
+      as.integer(v)
     }
   }, error = function(e) {
-    v <- unique(terra::values(region_ref)); v <- v[!is.na(v)] ; as.integer(v)
+    v <- unique(terra::values(region_ref))
+    v <- v[!is.na(v)]
+    as.integer(v)
   })
   if (length(modis_values) == 0) {
     log_msg("WARNING: Region reference has only NA; writing empty output and continuing")
     empty_out <- region_ref
-    out_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_", year_str, "_Discrete_Time1_500m.tif"))
+    out_path <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_", year_str, "_1km_Discrete_Time1.tif"))
     terra::writeRaster(empty_out, out_path, overwrite = TRUE)
     current_ref_path <- out_path
     next
@@ -315,12 +316,12 @@ for (year_index in start_year_index:length(plum_files)) {
   if (is.null(match_LC_classes)) {
     plum_layer_names <- names(region_plum)
     match_LC_classes <- build_synergy(plum_layer_names, modis_classes)
-    synergy_file <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_synergy_water_500m.rds"))
+    synergy_file <- file.path(output_dir, paste0(scenario_name, "_region", region_id, "_synergy_water_1km.rds"))
     saveRDS(match_LC_classes, synergy_file)
     log_msg(paste("Saved synergy:", synergy_file))
   }
 
-  output_prefix <- paste0(scenario_name, "_region", region_id, "_", year_str, "_500m")
+  output_prefix <- paste0(scenario_name, "_region", region_id, "_", year_str, "_1km")
   run_downscale <- function(assign_flag) {
     LandScaleR::downscaleLC(
       ref_map_file_name   = ref_path_for_run,
@@ -387,6 +388,7 @@ for (year_index in start_year_index:length(plum_files)) {
 
   log_msg(paste("Completed year:", year_str))
 }
+
 if (assign_ref_true_attempts > 0) {
   log_msg(paste(
     "assign_ref_cells=TRUE succeeded",

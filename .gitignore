@@ -43,8 +43,8 @@ ESA_PLUM_Downscaled/**
 !ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/
 !ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/
 !ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/
-!ESA_PLUM_Downscaled/deterministic_2_500_with_ref_cells_water/
-!ESA_PLUM_Downscaled/null_mod_500_with_ref_cells_water/
+!ESA_PLUM_Downscaled/fuzzy/
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/
 
 # Allow script files only from the 8 selected model-variant folders
 !ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/*.R
@@ -77,12 +77,12 @@ ESA_PLUM_Downscaled/**
 !ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.csh
 !ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.sbatch
 
-!ESA_PLUM_Downscaled/deterministic_2_500_with_ref_cells_water/*.R
-!ESA_PLUM_Downscaled/deterministic_2_500_with_ref_cells_water/*.sh
-!ESA_PLUM_Downscaled/deterministic_2_500_with_ref_cells_water/*.csh
-!ESA_PLUM_Downscaled/deterministic_2_500_with_ref_cells_water/*.sbatch
+!ESA_PLUM_Downscaled/fuzzy/*.R
+!ESA_PLUM_Downscaled/fuzzy/*.sh
+!ESA_PLUM_Downscaled/fuzzy/*.csh
+!ESA_PLUM_Downscaled/fuzzy/*.sbatch
 
-!ESA_PLUM_Downscaled/null_mod_500_with_ref_cells_water/*.R
-!ESA_PLUM_Downscaled/null_mod_500_with_ref_cells_water/*.sh
-!ESA_PLUM_Downscaled/null_mod_500_with_ref_cells_water/*.csh
-!ESA_PLUM_Downscaled/null_mod_500_with_ref_cells_water/*.sbatch
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sbatch
