@@ -12,8 +12,15 @@ The repository contains development code for eight model variants. The released 
 
 ## Repository Contents
 
+<<<<<<< HEAD
 - **ESA_PLUM_Downscaled/** - Main downscaling workflows for 8 model variants (each includes SLURM submission scripts)
 - **scripts/** - Utility scripts (e.g., package installation)
+=======
+- **ESA_PLUM_Downscaled/** - Main downscaling workflows for 8 model variants
+- **scripts/** - Data preparation and utility scripts
+- **slurm_scripts/** - HPC job submission scripts
+- **Africa_Shapefile/** - Spatial boundaries for analysis
+>>>>>>> 610b482 (Fix: Remove references to analysis/ directory not in repository)
 
 ## Spatial Coverage
 
@@ -70,9 +77,9 @@ The project processes five Shared Socioeconomic Pathways (SSPs):
 - **SSP4-RCP6.0**: Inequality pathway
 - **SSP5-RCP8.5**: Fossil-fueled development pathway
 
-## Analysis Scripts
+## Analysis and Figures
 
-Figure generation under `ESA_Downscale` in the Zenodo data deposit reflects an exploratory/investigation stage. The final analysis used for outputs is in `/bg/data/kaza_elephant/Downscale_SAfrica/analysis/` (outside this repository).
+Post-processing analysis scripts and figure generation code are not included in this repository. Analysis workflows and diagnostic scripts used to select the released product are documented in the associated ESSD data paper and its supplementary materials.
 
 ## Citation
 
