@@ -12,11 +12,8 @@ The repository contains development code for eight model variants. The released 
 
 ## Repository Contents
 
-- **ESA_PLUM_Downscaled/** - Main downscaling workflows for 8 model variants
-  - **analysis/** - Figure generation scripts for publication
-- **scripts/** - Data preparation and utility scripts
-- **slurm_scripts/** - HPC job submission scripts
-- **Africa_Shapefile/** - Spatial boundaries for analysis
+- **ESA_PLUM_Downscaled/** - Main downscaling workflows for 8 model variants (each includes SLURM submission scripts)
+- **scripts/** - Utility scripts (e.g., package installation)
 
 ## Spatial Coverage
 
