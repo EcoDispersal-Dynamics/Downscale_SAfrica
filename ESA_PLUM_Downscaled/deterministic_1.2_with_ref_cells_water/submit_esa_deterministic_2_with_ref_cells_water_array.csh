@@ -72,4 +72,5 @@ if ("$jobid" != "") then
     echo "Submitted ${variant_label}_with_ref_cells_water array for $scenario as JobID $jobid"
 else
     echo "Failed to submit ${variant_label}_with_ref_cells_water array for $scenario"
+    exit 1
 endif

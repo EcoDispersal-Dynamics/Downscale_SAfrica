@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # ================================================================
-# ESA_PLUM_Downscaled: deterministic_2.1 standalone runner
+# ESA_PLUM_Downscaled: deterministic_2.3 standalone runner
 # - Uses ESA WorldCover 2021 water-filled raster for complete coverage
 # - Iteratively updates the reference each year
 # - Supports all five SSP scenarios
@@ -159,17 +159,21 @@ if (!file.exists(esa_ref_path)) {
 full_ref <- terra::rast(esa_ref_path)
 log_line(paste("ESA reference loaded:", esa_ref_path))
 
-vals <- unique(terra::values(full_ref))
+ref_freq <- terra::freq(full_ref, value = TRUE)
+vals <- if (is.null(ref_freq) || nrow(ref_freq) == 0) numeric(0) else ref_freq[[1]]
 vals <- vals[!is.na(vals) & vals != 0]
-vals <- sort(vals)
+vals <- sort(unique(vals))
 if (length(vals) > 0) {
   cats_df <- data.frame(ID = vals, name = paste0("LC", vals))
   try({ terra::cats(full_ref, 1) <- cats_df }, silent = TRUE)
 }
 
-if (esa_ref_path != esa_waterfilled_path && !file.exists(esa_fixed_path)) {
+write_fixed_ref <- tolower(Sys.getenv("WRITE_FIXED_ESA_REF", unset = "false")) %in% c("1", "true", "yes")
+if (write_fixed_ref && esa_ref_path != esa_waterfilled_path && !file.exists(esa_fixed_path)) {
   try({ terra::writeRaster(full_ref, esa_fixed_path, overwrite = TRUE) }, silent = TRUE)
   if (file.exists(esa_fixed_path)) log_line(paste("Wrote fixed ESA reference:", esa_fixed_path))
+} else if (!write_fixed_ref && esa_ref_path != esa_waterfilled_path && !file.exists(esa_fixed_path)) {
+  log_line("Skipping write of fixed ESA reference (set WRITE_FIXED_ESA_REF=true to enable).")
 }
 
 full_ext <- terra::ext(full_ref)

@@ -264,8 +264,9 @@ for (year_index in start_year_index:length(plum_files)) {
   year_ref <- year_cover_result$raster
   ref_path_for_run <- if (!is.null(year_cover_result$path) && year_cover_result$filled) year_cover_result$path else current_ref_path
 
-  ref_values <- unique(terra::values(year_ref))
-  ref_values <- sort(ref_values[!is.na(ref_values) & ref_values != 0])
+  ref_freq <- terra::freq(year_ref, value = TRUE)
+  ref_values <- if (is.null(ref_freq) || nrow(ref_freq) == 0) numeric(0) else ref_freq[[1]]
+  ref_values <- sort(unique(ref_values[!is.na(ref_values) & ref_values != 0]))
   esa_classes <- paste0("LC", ref_values)
   log_line(paste("ESA classes in region:", paste(esa_classes, collapse = ", ")))
 
