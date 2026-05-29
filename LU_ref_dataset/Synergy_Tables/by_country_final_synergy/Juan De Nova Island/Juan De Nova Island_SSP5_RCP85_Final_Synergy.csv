@@ -1,8 +1,0 @@
-"","LC9","LC10","LC11","LC17","LC12","LC16"
-"Cropland",0,0,0,0,1,0
-"Pasture",1,0,0,0,0,0
-"TimberForest",0.6,0.3,0.1,0.2,0,0.1
-"UnmanagedForest",0.7,0.3,0,0,0.1,0.2
-"OtherNatural",0,1,0,0,0,0
-"Barren",0,0,0,0,0,1
-"Urban",0.7,0.3,0,0.1,0,0.2

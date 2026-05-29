@@ -2,31 +2,135 @@
 # .gitignore for KAZA Downscaling
 # ===============================
 
-# ----------------------------------------------------------------
-# Ignore all large LU_ref_PLUM_SSPs data and subfolders by default
+# Ignore everything under LU_ref_PLUM_SSPs by default
 LU_ref_dataset/LU_ref_PLUM_SSPs/
 
-# ================= HISTORIC RULES FOR INITIAL TESTING (KEPT FOR RECORD) =================
-# # These rules were initially used to only allow Angola test files:
-# !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/
-# LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/*
-# !LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/SSP1_RCP26_fraction_croped/Angola_SSP1_RCP26_LUC_fractions_*.tif
-
-# ================= MAIN RULES TO TRACK ALL CROPPED OUTPUT =================
-
-# Unignore parent folders so Git will descend into them and see nested files
+# Unignore necessary parent folders so Git can see nested content
 !LU_ref_dataset/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/
 !LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/
-!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/
-!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_croped/**
 
-# ----------------------------------------------------------------
+# Ignore all .tif files directly inside the SSP1_RCP26 fraction folder
+LU_ref_dataset/LU_ref_PLUM_SSPs/SSP1_RCP26/SSP1_RCP26_fraction/*.tif
+
+# Unignore all files inside all *_fraction_cropped folders and subfolders for all scenarios
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_cropped/
+!LU_ref_dataset/LU_ref_PLUM_SSPs/*/*_fraction/*_fraction_cropped/**
+
+
+# Ignore all s1 to s30 folders and their contents in all scenarios
+LU_ref_dataset/LU_ref_PLUM_SSPs/*/s*/
+
 # Ignore common R project/working files
 .Rproj.user/
 .RData
 .Rhistory
 downscaling_log.txt
 
-# (add other temp or cache files here if needed)
+# ===============================================================
+# ESA PLUM downscaling release scope (scripts only, no raw outputs)
+# ===============================================================
+
+# Ignore everything under ESA_PLUM_Downscaled by default
+ESA_PLUM_Downscaled/**
+
+# Re-open parent folders so specific file-level allow rules can match
+!ESA_PLUM_Downscaled/
+!ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/
+!ESA_PLUM_Downscaled/deterministic_1.2_with_ref_cells_water/
+!ESA_PLUM_Downscaled/deterministic_1.3_with_ref_cells_water/
+!ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/
+!ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/
+!ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/
+!ESA_PLUM_Downscaled/fuzzy/
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/
+
+# Allow script files only from the 8 selected model-variant folders
+!ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_1.1_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/deterministic_1.2_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_1.2_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_1.2_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_1.2_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/deterministic_1.3_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_1.3_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_1.3_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_1.3_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_2.1_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_2.2_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/deterministic_2.3_with_ref_cells_water/*.sbatch
+
+!ESA_PLUM_Downscaled/fuzzy/*.R
+!ESA_PLUM_Downscaled/fuzzy/*.sh
+!ESA_PLUM_Downscaled/fuzzy/*.csh
+!ESA_PLUM_Downscaled/fuzzy/*.sbatch
+
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.R
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sh
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.csh
+!ESA_PLUM_Downscaled/null_mod_1km_with_ref_cells_water/*.sbatch
+
+# ===============================================================
+# Release hardening: block generated artifacts and runtime outputs
+# ===============================================================
+
+# Runtime logs and temporary outputs
+*.log
+*.out
+*.err
+Rplots.pdf
+
+# Common runtime output folders across workflows
+logs/
+slurm_logs/
+**/logs/
+**/output/
+
+# Legacy report artifacts not part of release payload
+All_Dendrograms_3x2.png
+Country_Synergy_Summary.csv
+interactive_table.html
+run_r_script.out
+run_r_script.err
+
+# ===============================================================
+# Local legacy workspace content (keep out of release branch)
+# ===============================================================
+
+# Local data/work folders used during exploratory setup
+Africa_Shapefile/
+analysis/
+docs/
+ESA_WorldCover/
+MODIS_Africa_Data/
+MODIS_PLUM_Downscaled/
+PLUM_Africa_Data/
+slurm_scripts/
+scripts/MODIS_Processing/
+scripts/r/
+scripts/shell/
+
+# Local git recovery snapshots and scratch artifacts
+.git_corrupt_*/
+create_visualizations_*.log
+merge_results_*.log
+cookies.txt
+cmr_search_results.json
+1
