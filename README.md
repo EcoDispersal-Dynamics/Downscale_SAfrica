@@ -72,7 +72,7 @@ The project processes five Shared Socioeconomic Pathways (SSPs):
 
 ## Analysis Scripts
 
-Figure generation scripts are located in `ESA_PLUM_Downscaled/analysis/`. These produce spatial maps and statistical summaries of land use change patterns. See the analysis folder README for details.
+Figure generation under `ESA_Downscale` in the Zenodo data deposit reflects an exploratory/investigation stage. The final analysis used for outputs is in `/bg/data/kaza_elephant/Downscale_SAfrica/analysis/` (outside this repository).
 
 ## Citation
 
